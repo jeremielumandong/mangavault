@@ -1,0 +1,5 @@
+{"result":"ok","response":"collection","data":[
+ {"id":"f98660a1-d2e2-461c-960d-7bd13df8b76d","type":"manga","attributes":{"title":{"en":"Kagurabachi"},"altTitles":[{"ja":"カグラバチ"}],"originalLanguage":"ja","status":"ongoing","tags":[]},
+  "relationships":[{"id":"x","type":"cover_art","attributes":{"fileName":"cover.png"}}]},
+ {"id":"32d76d19-8a05-4db0-9fc2-e0b0648fe9d0","type":"manga","attributes":{"title":{"ko-ro":"Na Honjaman Level Up"},"originalLanguage":"ko","tags":[]},"relationships":[]}
+],"limit":32,"offset":32,"total":5000}

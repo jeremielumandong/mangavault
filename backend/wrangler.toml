@@ -1,0 +1,33 @@
+# Deploy-specific values (domain, D1 database id) are NOT kept here: they
+# come from the gitignored ../config.env via scripts/deploy.sh.
+name = "mangavault-api"
+main = "crates/worker/build/worker/shim.mjs"
+compatibility_date = "2026-10-01"
+workers_dev = false
+
+[build]
+command = "cd crates/worker && worker-build --release"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "mangavault"
+database_id = "00000000-0000-0000-0000-000000000000" # replaced at deploy
+migrations_dir = "migrations"
+
+[triggers]
+# Must match crawl::LATEST_CRON / crawl::POPULAR_CRON.
+crons = ["*/15 * * * *", "0 */6 * * *"]
+
+[vars]
+# Comma-separated accepted token audiences: your iOS bundle id (and any
+# Services ID) for Apple; your Android/Web OAuth client ids for Google.
+APPLE_AUDIENCES = ""
+GOOGLE_AUDIENCES = ""
+# Series refreshed per cron run and popular pages per site per backfill.
+# Lower both on the Workers Free plan (50 subrequests / D1 queries per run).
+CRAWL_REFRESH_BUDGET = "15"
+CRAWL_POPULAR_PAGES = "3"
+DEV_AUTH = "false"
+
+[observability]
+enabled = true
