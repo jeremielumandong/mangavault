@@ -165,6 +165,29 @@ final class SyncLogicTests: XCTestCase {
 
     func testCategories() {
         XCTAssertEqual(Categories.all(custom: ["Weekly reads"], used: ["Reading", nil, "Old"]), ["Reading", "Plan to read", "Completed", "Weekly reads", "Old"])
+        XCTAssertEqual(Categories.all(custom: [], used: [], removed: ["Plan to read"]), ["Reading", "Completed"])
+        // Still on a synced entry: it stays visible.
+        XCTAssertEqual(Categories.all(custom: [], used: ["Completed"], removed: ["Completed"]), ["Reading", "Plan to read", "Completed"])
+    }
+
+    func testHiddenProgressLeavesContinueAndSyncs() {
+        var p = ProgressEntry(mangaId: 7, chapterId: 1, chapterNumber: 15, chapterIndex: 14, page: 1, pageCount: 10, completed: false, updatedAt: "2026-10-02T00:00:00.000Z")
+        XCTAssertEqual(Reading.continueList([p], latest: { _ in 20 }).count, 1)
+        p.hidden = true
+        XCTAssertTrue(Reading.continueList([p], latest: { _ in 20 }).isEmpty)
+        XCTAssertTrue(p.putItem.hidden)
+        let remote = RemoteProgress(mangaId: 7, chapterId: 1, chapterNumber: 15, page: 1, pageCount: 10, completed: false, updatedAt: "2026-10-03T00:00:00.000Z", hidden: true)
+        XCTAssertEqual(Merge.progress(nil, remote)?.isHidden, true)
+        let old = RemoteProgress(mangaId: 7, chapterId: 1, chapterNumber: 15, page: 1, pageCount: 10, completed: false, updatedAt: "2026-10-03T00:00:00.000Z")
+        XCTAssertEqual(Merge.progress(nil, old)?.isHidden, false)
+    }
+
+    func testStatsDecode() throws {
+        let json = #"{"series":12345,"chapters":456789,"latestUpdateAt":null}"#.data(using: .utf8)!
+        let s = try JSONDecoder().decode(CatalogStats.self, from: json)
+        XCTAssertEqual(s.series, 12345)
+        XCTAssertEqual(Fmt.count(s.series), "12,345")
+        XCTAssertNil(s.latestUpdateAt)
     }
 }
 

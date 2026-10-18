@@ -171,6 +171,8 @@ public final class APIClient: @unchecked Sendable {
 
     public func home() async throws -> HomeFeed { try await get("home") }
 
+    public func stats() async throws -> CatalogStats { try await get("stats") }
+
     public func genres() async throws -> [String] {
         let r: Items<String> = try await get("genres")
         return r.items

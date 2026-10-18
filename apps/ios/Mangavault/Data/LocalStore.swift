@@ -7,6 +7,7 @@ enum LibraryLayout: String, Codable { case grid, list }
 enum LibrarySort: String, Codable, CaseIterable {
     case lastRead = "Last read"
     case lastUpdated = "Last updated"
+    case mostUnread = "Most unread"
     case title = "Title"
     case dateAdded = "Date added"
 }
@@ -45,6 +46,7 @@ private struct Snapshot: Codable {
     var history: [Int: HistoryEntry] = [:]
     var summaries: [Int: MangaSummary] = [:]
     var customCategories: [String] = []
+    var removedCategories: [String] = []
     var recents: [String] = []
     var onboardingDone = false
     var genres: [String] = []
@@ -96,6 +98,7 @@ extension Snapshot {
         history = c.value(.history, [:])
         summaries = c.value(.summaries, [:])
         customCategories = c.value(.customCategories, [])
+        removedCategories = c.value(.removedCategories, [])
         recents = c.value(.recents, [])
         onboardingDone = c.value(.onboardingDone, false)
         genres = c.value(.genres, [])
@@ -119,6 +122,8 @@ final class LocalStore {
     var history: [Int: HistoryEntry] = [:]
     var summaries: [Int: MangaSummary] = [:]
     var customCategories: [String] = []
+    /// Default categories the reader deleted.
+    var removedCategories: [String] = []
     var recents: [String] = []
     var onboardingDone = false
     var genres: [String] = []
@@ -153,6 +158,7 @@ final class LocalStore {
         history = s.history
         summaries = s.summaries
         customCategories = s.customCategories
+        removedCategories = s.removedCategories
         recents = s.recents
         onboardingDone = s.onboardingDone
         genres = s.genres
@@ -167,7 +173,7 @@ final class LocalStore {
     private var snapshot: Snapshot {
         Snapshot(
             library: library, progress: progress, readMarks: readMarks, history: history, summaries: summaries,
-            customCategories: customCategories, recents: recents, onboardingDone: onboardingDone, genres: genres,
+            customCategories: customCategories, removedCategories: removedCategories, recents: recents, onboardingDone: onboardingDone, genres: genres,
             settings: settings, readerModes: readerModes, pending: pending, cursors: cursors, account: account,
             lastSyncedAt: lastSyncedAt)
     }
@@ -228,7 +234,7 @@ final class LocalStore {
     var favorites: [LibraryEntry] { library.values.filter { !$0.deleted } }
 
     var categories: [String] {
-        Categories.all(custom: customCategories, used: favorites.map(\.category))
+        Categories.all(custom: customCategories, used: favorites.map(\.category), removed: removedCategories)
     }
 
     func setFavorite(_ manga: MangaSummary, category: String?) {
@@ -256,8 +262,88 @@ final class LocalStore {
     func addCategory(_ name: String) {
         let n = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !n.isEmpty, !categories.contains(n) else { return }
-        customCategories.append(n)
+        removedCategories.removeAll { $0 == n }
+        if !Categories.defaults.contains(n) { customCategories.append(n) }
         save()
+    }
+
+    /// Moves favorites to `category` (nil = no category).
+    func setCategory(_ ids: [Int], _ category: String?) {
+        let now = ISO.now()
+        var any = false
+        for id in ids {
+            guard var e = library[id], !e.deleted, e.category != category else { continue }
+            e.category = category
+            e.updatedAt = now
+            library[id] = e
+            pending.library[id] = e
+            any = true
+        }
+        if let category { addCategory(category) }
+        if any { changed() }
+    }
+
+    /// Removes several favorites; returns them as they were, for Undo.
+    func removeFavorites(_ ids: [Int]) -> [LibraryEntry] {
+        let now = ISO.now()
+        var removed: [LibraryEntry] = []
+        for id in ids {
+            guard var e = library[id], !e.deleted else { continue }
+            removed.append(e)
+            e.deleted = true
+            e.updatedAt = now
+            library[id] = e
+            pending.library[id] = e
+        }
+        if !removed.isEmpty { changed() }
+        return removed
+    }
+
+    func restoreFavorites(_ entries: [LibraryEntry]) {
+        let now = ISO.now()
+        for var e in entries {
+            e.deleted = false
+            e.updatedAt = now
+            library[e.mangaId] = e
+            pending.library[e.mangaId] = e
+        }
+        changed()
+    }
+
+    func renameCategory(_ old: String, to new: String) {
+        let n = new.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !n.isEmpty, n != old else { return }
+        let ids = favorites.filter { $0.category == old }.map(\.mangaId)
+        if let i = customCategories.firstIndex(of: old) {
+            customCategories[i] = n
+            customCategories = customCategories.reduce(into: []) { out, c in if !out.contains(c) { out.append(c) } }
+        }
+        if Categories.defaults.contains(old) { removedCategories.append(old) }
+        addCategory(n)
+        setCategory(ids, n)
+        save()
+    }
+
+    /// Drops a category; its titles stay in Library without one. Returns the
+    /// ids that were in it, for Undo.
+    func deleteCategory(_ name: String) -> [Int] {
+        let ids = favorites.filter { $0.category == name }.map(\.mangaId)
+        customCategories.removeAll { $0 == name }
+        if Categories.defaults.contains(name), !removedCategories.contains(name) { removedCategories.append(name) }
+        setCategory(ids, nil)
+        save()
+        return ids
+    }
+
+    /// Removes a series from (or puts it back on) Continue reading; where the
+    /// reader is in it is kept.
+    func setContinueHidden(_ id: Int, _ hidden: Bool) {
+        guard var p = progress[id], p.isHidden != hidden else { return }
+        p.hidden = hidden ? true : nil
+        p.updatedAt = ISO.now()
+        progress[id] = p
+        pending.progress[id] = p
+        changed()
     }
 
     // MARK: Progress, read marks, history
@@ -270,7 +356,9 @@ final class LocalStore {
     func recordProgress(manga: MangaSummary, chapter: Chapter, page: Int, pageCount: Int) {
         let now = ISO.now()
         let completed = page >= pageCount && pageCount > 0
-        if let old = progress[manga.id], old.chapterId == chapter.id, old.page == page, old.completed == completed {
+        if let old = progress[manga.id], old.chapterId == chapter.id, old.page == page, old.completed == completed,
+            !old.isHidden
+        {
             return
         }
         summaries[manga.id] = manga

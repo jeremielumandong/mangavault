@@ -50,4 +50,10 @@ class FormatTest {
         assertEquals(listOf(1..10, 11..12), jumpBuckets(12))
         assertEquals(61..63, jumpBuckets(63).last())
     }
+
+    @Test
+    fun countsUseGrouping() {
+        assertEquals("12,345", Format.count(12345))
+        assertEquals("0", Format.count(0))
+    }
 }

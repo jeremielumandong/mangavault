@@ -80,6 +80,10 @@ data class HomeFeed(
     @SerialName("new") val newTitles: List<MangaSummary> = emptyList(),
 )
 
+/** `GET /v1/stats`: how big the server's catalog is. */
+@Serializable
+data class CatalogStats(val series: Long = 0, val chapters: Long = 0, val latestUpdateAt: String? = null)
+
 @Serializable
 data class Items<T>(val items: List<T> = emptyList())
 
@@ -114,6 +118,7 @@ data class ProgressItem(
     val pageCount: Int? = null,
     val completed: Boolean = false,
     val updatedAt: String,
+    val hidden: Boolean = false,
 )
 
 @Serializable

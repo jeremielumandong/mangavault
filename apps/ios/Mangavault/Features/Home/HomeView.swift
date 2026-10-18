@@ -263,6 +263,27 @@ struct ContinueCard: View {
             .background(theme.sf, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
         .buttonStyle(.plain)
+        .contextMenu {
+            Button {
+                app.open(manga)
+            } label: {
+                Label("Series details", systemImage: "info.circle")
+            }
+            Button(role: .destructive) {
+                removeFromContinue()
+            } label: {
+                Label("Remove from Continue Reading", systemImage: "minus.circle")
+            }
+        }
+        .accessibilityAction(named: "Remove from Continue Reading") { removeFromContinue() }
+    }
+
+    /// Hides the card until the series is read again; the place in it is kept.
+    private func removeFromContinue() {
+        let id = manga.id
+        let store = app.store
+        store.setContinueHidden(id, true)
+        app.showToast("Removed from Continue Reading", undo: { store.setContinueHidden(id, false) })
     }
 
     private var sub: String {

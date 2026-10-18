@@ -215,6 +215,19 @@ public struct HomeFeed: Codable, Sendable {
     public var isEmpty: Bool { popular.isEmpty && latest.isEmpty && newTitles.isEmpty }
 }
 
+/// `GET /v1/stats`: how big the server's catalog is.
+public struct CatalogStats: Codable, Sendable, Hashable {
+    public var series: Int
+    public var chapters: Int
+    public var latestUpdateAt: String?
+
+    public init(series: Int, chapters: Int, latestUpdateAt: String? = nil) {
+        self.series = series
+        self.chapters = chapters
+        self.latestUpdateAt = latestUpdateAt
+    }
+}
+
 struct Items<T: Decodable>: Decodable {
     var items: [T]
 }
@@ -262,6 +275,8 @@ public struct RemoteProgress: Codable, Sendable, Hashable {
     public var pageCount: Int?
     public var completed: Bool
     public var updatedAt: String
+    /// Removed from Continue reading; absent from older servers.
+    public var hidden: Bool?
 }
 
 public struct RemoteReadMark: Codable, Sendable {
@@ -298,14 +313,18 @@ public struct ProgressPutItem: Codable, Sendable, Hashable {
     public var page: Int
     public var pageCount: Int?
     public var completed: Bool
+    public var hidden: Bool
     public var updatedAt: String
 
-    public init(mangaId: Int, chapterId: Int, page: Int, pageCount: Int?, completed: Bool, updatedAt: String) {
+    public init(
+        mangaId: Int, chapterId: Int, page: Int, pageCount: Int?, completed: Bool, hidden: Bool = false, updatedAt: String
+    ) {
         self.mangaId = mangaId
         self.chapterId = chapterId
         self.page = page
         self.pageCount = pageCount
         self.completed = completed
+        self.hidden = hidden
         self.updatedAt = updatedAt
     }
 }

@@ -154,12 +154,19 @@ fun CategorySheet(
 }
 
 @Composable
-fun NewCategorySheet(hint: String, onDismiss: () -> Unit, onAdd: (String) -> Unit) {
-    var text by remember { mutableStateOf("") }
+fun NewCategorySheet(
+    hint: String,
+    onDismiss: () -> Unit,
+    title: String = "New category",
+    initial: String = "",
+    action: String = "Add",
+    onAdd: (String) -> Unit,
+) {
+    var text by remember { mutableStateOf(initial) }
     MvSheet(onDismiss) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("New category", fontSize = 17.sp, fontWeight = SemiBold)
-            InputRow(text, { text = it }, "e.g. Weekly reads", "Add", { text.trim().takeIf { it.isNotEmpty() }?.let(onAdd) })
+            Text(title, fontSize = 17.sp, fontWeight = SemiBold)
+            InputRow(text, { text = it }, "e.g. Weekly reads", action, { text.trim().takeIf { it.isNotEmpty() }?.let(onAdd) })
             Text(hint, fontSize = 13.sp, lineHeight = 18.sp, color = Mv.colors.ts)
         }
     }
