@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.BrokenImage
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -143,20 +144,53 @@ fun PagedPage(
     onZoomed: (Boolean) -> Unit,
     onTap: (Offset, IntSize) -> Unit,
     onLongPress: () -> Unit,
+    /** Guided view: step through the page's panels; the page is shown whole (Screen fit). */
+    guided: Boolean = false,
+    rtl: Boolean = false,
+    /** Whether the reader arrived here going forward, read when the page becomes [active]. */
+    arrivedForward: () -> Boolean = { true },
+    onGuide: (PanelGuide?) -> Unit = {},
+    onSwipe: (Offset) -> Unit = {},
 ) {
     var box by remember { mutableStateOf(IntSize.Zero) }
     val tap by rememberUpdatedState(onTap)
     val longPress by rememberUpdatedState(onLongPress)
     val reportZoom by rememberUpdatedState(onZoomed)
+    val forward by rememberUpdatedState(arrivedForward)
+    val swipe by rememberUpdatedState(onSwipe)
+    val guidedSwipe = remember { { d: Offset -> swipe(d) } }
     val zoom = remember(page.url, fit) { ZoomState() }
     val zoomed by remember(zoom) { derivedStateOf { zoom.zoomed } }
-    LaunchedEffect(zoom, active) { if (!active) zoom.reset() }
+    val guide = remember(zoom) { PanelGuide(zoom) }
+    val ctx = LocalContext.current
+    LaunchedEffect(zoom, active) {
+        if (!active) {
+            guide.leave()
+            zoom.reset()
+        }
+    }
     LaunchedEffect(zoomed, active) { if (active) reportZoom(zoomed) }
+    DisposableEffect(guide, guided) {
+        onGuide(if (guided) guide else null)
+        onDispose { onGuide(null) }
+    }
+    LaunchedEffect(page.url, guided, rtl, retryKey) {
+        guide.panels = if (guided) PanelCache.panels(ctx, page, headers, rtl) else null
+    }
+    val panels = guide.panels
+    LaunchedEffect(active, panels) {
+        if (active && guided && panels != null && guide.index < 0) guide.enter(forward())
+    }
+    // The page's real size arrives with the image: frame the current panel again.
+    val contentSize = zoom.content
+    LaunchedEffect(contentSize) {
+        if (active && guided) guide.reframe()
+    }
     Box(
         Modifier.fillMaxSize()
             .clipToBounds()
             .onSizeChanged { box = it }
-            .zoomable(zoom, panUnzoomed = true)
+            .zoomable(zoom, panUnzoomed = true, onSwipe = if (guided) guidedSwipe else null)
             .pointerInput(page.url) {
                 coroutineScope {
                     detectTapGestures(

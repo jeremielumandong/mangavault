@@ -13,6 +13,7 @@ struct PagedReader: UIViewControllerRepresentable {
     var reloadToken: Int
     var background: ReaderBackground
     var fit: ReaderFit
+    var guided: Bool
 
     func makeCoordinator() -> Coordinator { Coordinator(model: model) }
 
@@ -21,10 +22,11 @@ struct PagedReader: UIViewControllerRepresentable {
             transitionStyle: .scroll,
             navigationOrientation: model.mode == .pagedV ? .vertical : .horizontal,
             options: [.interPageSpacing: 0])
-        pvc.dataSource = context.coordinator
+        pvc.dataSource = model.guided ? nil : context.coordinator
         pvc.delegate = context.coordinator
         pvc.view.backgroundColor = model.palette.uiBackground
         context.coordinator.pager = pvc
+        context.coordinator.attachGuide()
         context.coordinator.show(model.position, animated: false)
         return pvc
     }
@@ -33,6 +35,10 @@ struct PagedReader: UIViewControllerRepresentable {
         let c = context.coordinator
         c.model = model
         pvc.view.backgroundColor = model.palette.uiBackground
+        // Guided view steps with taps and swipes, so the pager's own swiping is off.
+        let source: UIPageViewControllerDataSource? = model.guided ? nil : c
+        if (pvc.dataSource == nil) != (source == nil) { pvc.dataSource = source }
+        c.attachGuide()
         c.update()
     }
 
@@ -40,18 +46,22 @@ struct PagedReader: UIViewControllerRepresentable {
     final class Coordinator: NSObject, UIPageViewControllerDataSource, UIPageViewControllerDelegate {
         var model: ReaderModel
         weak var pager: UIPageViewController?
-        private var style: (ReaderBackground, ReaderFit)?
+        private var style: (ReaderBackground, ReaderFit, Bool)?
         private var reloadToken = -1
         private var animating = false
 
         init(model: ReaderModel) { self.model = model }
 
-        private var current: ReaderPageController? { pager?.viewControllers?.first as? ReaderPageController }
+        var current: ReaderPageController? { pager?.viewControllers?.first as? ReaderPageController }
+
+        func attachGuide() {
+            model.guideStep = { [weak self] dir in self?.current?.guideStep(dir) ?? false }
+        }
 
         func update() {
             let s = model.settings
-            if style.map({ $0.0 != s.readerBackground || $0.1 != s.fit }) ?? true {
-                style = (s.readerBackground, s.fit)
+            if style.map({ $0.0 != s.readerBackground || $0.1 != model.fit || $0.2 != model.guided }) ?? true {
+                style = (s.readerBackground, model.fit, model.guided)
                 for vc in pager?.viewControllers ?? [] { (vc as? ReaderPageController)?.restyle() }
             }
             if let r = model.reload, r.token != reloadToken {
@@ -138,6 +148,14 @@ final class ReaderPageController: UIViewController, UIScrollViewDelegate, UIGest
     /// Bounds and image size the page was last laid out for, so other layout passes don't
     /// jump a page the reader has panned back to the top.
     private var laidOut: (CGSize, CGSize?)?
+    // Guided view: the page's panels (ending with the whole page) and which is on screen.
+    private var panels: [PanelRect]?
+    private var panelIndex = -1
+    private var guideTask: Task<Void, Never>?
+    private var guidedOn = false
+    /// Set once the reader pinches or double-taps, so one finger pans again.
+    private var free = false
+    private var swipes: [UISwipeGestureRecognizer] = []
 
     init(model: ReaderModel, item: ReaderItem, index: Int) {
         self.model = model
@@ -148,11 +166,21 @@ final class ReaderPageController: UIViewController, UIScrollViewDelegate, UIGest
 
     required init?(coder: NSCoder) { fatalError() }
 
-    deinit { task?.cancel() }
+    deinit {
+        task?.cancel()
+        guideTask?.cancel()
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = model.palette.uiBackground
+        for d in [UISwipeGestureRecognizer.Direction.left, .right, .up, .down] {
+            let s = UISwipeGestureRecognizer(target: self, action: #selector(swiped(_:)))
+            s.direction = d
+            s.isEnabled = false
+            view.addGestureRecognizer(s)
+            swipes.append(s)
+        }
         switch item.slot {
         case .page(_, let p, let n):
             setUpPage(number: p, of: n)
@@ -161,6 +189,12 @@ final class ReaderPageController: UIViewController, UIScrollViewDelegate, UIGest
         case .end(let c):
             embed(AnyView(CaughtUpView(model: model, chapterId: c)))
         }
+        applyGuided()
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        if model.guided, panels != nil, panelIndex < 0 { enterGuide() }
     }
 
     // MARK: Hosted pages
@@ -227,6 +261,7 @@ final class ReaderPageController: UIViewController, UIScrollViewDelegate, UIGest
         view.addGestureRecognizer(single)
         let press = UILongPressGestureRecognizer(target: self, action: #selector(pressed(_:)))
         view.addGestureRecognizer(press)
+        scroll.pinchGestureRecognizer?.addTarget(self, action: #selector(pinched(_:)))
         restyle()
         load()
     }
@@ -238,11 +273,14 @@ final class ReaderPageController: UIViewController, UIScrollViewDelegate, UIGest
         fail.style(pal, accent: UIColor(model.app.theme.ac))
         laidOut = nil
         if isViewLoaded { view.setNeedsLayout() }
+        applyGuided()
     }
 
     func reload() {
         guard let info = model.pageInfo(item) else { return }
         ImagePipeline.shared.evict(info.page.url)
+        panels = nil
+        panelIndex = -1
         load()
     }
 
@@ -288,6 +326,7 @@ final class ReaderPageController: UIViewController, UIScrollViewDelegate, UIGest
         scroll.zoomScale = 1
         laidOut = nil
         view.setNeedsLayout()
+        if model.guided { detectPanels() }
     }
 
     override func viewDidLayoutSubviews() {
@@ -310,7 +349,7 @@ final class ReaderPageController: UIViewController, UIScrollViewDelegate, UIGest
             return 1.45
         }()
         var size: CGSize
-        switch model.settings.fit {
+        switch model.fit {
         case .width:
             size = CGSize(width: bounds.width, height: bounds.width * aspect)
         case .height:
@@ -365,6 +404,7 @@ final class ReaderPageController: UIViewController, UIScrollViewDelegate, UIGest
     }
 
     @objc private func doubleTapped(_ g: UITapGestureRecognizer) {
+        setFree()
         if scroll.zoomScale > 1.01 {
             scroll.setZoomScale(1, animated: true)
             return
@@ -373,6 +413,91 @@ final class ReaderPageController: UIViewController, UIScrollViewDelegate, UIGest
         let s: CGFloat = 2.2
         let size = CGSize(width: scroll.bounds.width / s, height: scroll.bounds.height / s)
         scroll.zoom(to: CGRect(x: p.x - size.width / 2, y: p.y - size.height / 2, width: size.width, height: size.height), animated: true)
+    }
+
+    @objc private func pinched(_ g: UIPinchGestureRecognizer) {
+        if g.state == .began { setFree() }
+    }
+
+    @objc private func swiped(_ g: UISwipeGestureRecognizer) {
+        switch g.direction {
+        case .left: model.swipe(dx: -1, dy: 0)
+        case .right: model.swipe(dx: 1, dy: 0)
+        case .up: model.swipe(dx: 0, dy: -1)
+        case .down: model.swipe(dx: 0, dy: 1)
+        default: break
+        }
+    }
+
+    // MARK: Guided view
+
+    /// Turns guided view's gestures on or off: while guiding, one finger swipes between panels
+    /// instead of panning, until the reader zooms by hand.
+    private func applyGuided() {
+        let on = model.guided
+        if on != guidedOn {
+            guidedOn = on
+            free = false
+            panels = nil
+            panelIndex = -1
+            guideTask?.cancel()
+            if on, imageView.image != nil { detectPanels() }
+        }
+        for s in swipes { s.isEnabled = on && !free }
+        if item.isPage { scroll.isScrollEnabled = !on || free }
+    }
+
+    private func setFree() {
+        guard model.guided, !free else { return }
+        free = true
+        applyGuided()
+    }
+
+    private func detectPanels() {
+        guard model.guided, let info = model.pageInfo(item) else { return }
+        guideTask?.cancel()
+        let rtl = model.mode == .rtl
+        guideTask = Task { [weak self] in
+            let found = await PanelStore.shared.panels(info.page.url, headers: info.headers, rtl: rtl)
+            guard let self, !Task.isCancelled, let found, self.model.guided else { return }
+            self.panels = found
+            if self.panelIndex < 0, self.view.window != nil, self.isCurrent { self.enterGuide() }
+        }
+    }
+
+    private var isCurrent: Bool {
+        model.items.indices.contains(model.position) && model.items[model.position].id == item.id
+    }
+
+    /// Arriving going forward starts at the first panel; going back, at the whole page.
+    private func enterGuide() {
+        guard let p = panels, !p.isEmpty else { return }
+        panelIndex = model.movedForward ? 0 : p.count - 1
+        showPanel()
+    }
+
+    /// One panel forward or back. False when there's none that way, so the page turns.
+    func guideStep(_ dir: Int) -> Bool {
+        guard model.guided, let p = panels, let to = GuideSteps.next(index: panelIndex, count: p.count, dir: dir)
+        else { return false }
+        panelIndex = to
+        showPanel()
+        return true
+    }
+
+    private func showPanel() {
+        guard let p = panels, p.indices.contains(panelIndex) else { return }
+        view.layoutIfNeeded()
+        free = false
+        applyGuided()
+        let r = p[panelIndex]
+        let b = imageView.bounds.size
+        guard r != .full, b.width > 0, b.height > 0 else {
+            scroll.setZoomScale(1, animated: true)
+            return
+        }
+        let rect = CGRect(x: r.left * b.width, y: r.top * b.height, width: r.width * b.width, height: r.height * b.height)
+        scroll.zoom(to: rect.insetBy(dx: -rect.width * 0.04, dy: -rect.height * 0.04), animated: true)
     }
 
     @objc private func pressed(_ g: UILongPressGestureRecognizer) {

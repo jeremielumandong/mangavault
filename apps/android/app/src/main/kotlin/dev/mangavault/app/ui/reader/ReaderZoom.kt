@@ -26,10 +26,12 @@ import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
+import dev.mangavault.core.util.PanelRect
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.sign
 
 /**
@@ -51,11 +53,14 @@ class ZoomState {
             clamp()
         }
 
-    /** Unscaled size of the content. Zero means it fills the viewport. */
-    var content = IntSize.Zero
+    private var contentSize by mutableStateOf(IntSize.Zero)
+
+    /** Unscaled size of the content. Zero means it fills the viewport. Observable. */
+    var content: IntSize
+        get() = contentSize
         set(v) {
-            if (field == v) return
-            field = v
+            if (contentSize == v) return
+            contentSize = v
             if (!touched) offset = Offset(0f, limits().y) else clamp()
         }
 
@@ -66,6 +71,9 @@ class ZoomState {
     var scrollList: ((Float) -> Float)? = null
 
     val zoomed get() = scale > 1.01f
+
+    /** Guided view: set once the reader pinches or double-taps, so one finger pans again. */
+    var free = false
     private var touched = false
     private val mutex = MutatorMutex()
 
@@ -130,6 +138,7 @@ class ZoomState {
 
     fun reset() {
         touched = false
+        free = false
         scale = 1f
         offset = Offset(0f, limits(1f).y)
     }
@@ -141,9 +150,42 @@ class ZoomState {
 
     /** Toggles [DOUBLE_TAP_SCALE] around [at] (viewport pixels). */
     suspend fun toggle(at: Offset) {
+        free = true
         mutex.mutate {
             val to = if (zoomed) 1f else DOUBLE_TAP_SCALE
             animate(scale, to, animationSpec = tween(220)) { s, _ -> zoomBy(s / scale, at) }
+        }
+    }
+
+    /**
+     * Scale and offset that frame [panel] (fractions of the content) in the viewport with a
+     * [margin] share of the screen around it. The whole page comes out at 1×.
+     */
+    fun frame(panel: PanelRect, margin: Float = PANEL_MARGIN): Pair<Float, Offset> {
+        val c = if (content == IntSize.Zero) viewport else content
+        if (c.width == 0 || c.height == 0 || viewport.width == 0 || viewport.height == 0) return 1f to Offset.Zero
+        val pw = (panel.width * c.width).coerceAtLeast(1f)
+        val ph = (panel.height * c.height).coerceAtLeast(1f)
+        val s = (min(viewport.width / pw, viewport.height / ph) * (1f - margin)).coerceIn(1f, MAX_SCALE)
+        // How far the panel's centre must move to reach the viewport centre, unscaled.
+        val dx = (0.5f - (panel.left + panel.right) / 2f) * c.width
+        val dy = (0.5f - (panel.top + panel.bottom) / 2f) * c.height
+        val l = limits(s)
+        return s to Offset((dx * s).coerceIn(-l.x, l.x), (dy * s).coerceIn(-l.y, l.y))
+    }
+
+    /** Glides to [panel], for guided view. */
+    suspend fun show(panel: PanelRect) {
+        val (toScale, toOffset) = frame(panel)
+        mutex.mutate {
+            touched = true
+            free = false
+            val fromScale = scale
+            val fromOffset = offset
+            animate(0f, 1f, animationSpec = tween(320)) { f, _ ->
+                scale = fromScale + (toScale - fromScale) * f
+                offset = fromOffset + (toOffset - fromOffset) * f
+            }
         }
     }
 
@@ -170,6 +212,7 @@ class ZoomState {
     companion object {
         const val MAX_SCALE = 5f
         const val DOUBLE_TAP_SCALE = 2.2f
+        const val PANEL_MARGIN = 0.04f
         private const val MIN_FLING = 50f
     }
 }
@@ -178,10 +221,14 @@ class ZoomState {
  * Pinch-zoom, pan and fling. Two fingers always zoom. One finger pans when zoomed in; at 1× it pans
  * only with [panUnzoomed] and when the content can move that way (a tall page), otherwise the drag
  * is left to the pager or list underneath. Put the taps after this modifier.
+ *
+ * With [onSwipe] (guided view) one finger doesn't pan until the reader pinches or double-taps
+ * ([ZoomState.free]); a drag is reported as a swipe when it ends instead. Pass a remembered
+ * lambda: a new one restarts the gesture detector.
  */
-fun Modifier.zoomable(state: ZoomState, panUnzoomed: Boolean): Modifier = this
+fun Modifier.zoomable(state: ZoomState, panUnzoomed: Boolean, onSwipe: ((Offset) -> Unit)? = null): Modifier = this
     .onSizeChanged { state.viewport = it }
-    .pointerInput(state, panUnzoomed) {
+    .pointerInput(state, panUnzoomed, onSwipe) {
         val decay = splineBasedDecay<Float>(this)
         val maxV = viewConfiguration.maximumFlingVelocity
         val slop = viewConfiguration.touchSlop
@@ -202,6 +249,7 @@ fun Modifier.zoomable(state: ZoomState, panUnzoomed: Boolean): Modifier = this
                     if (pressed >= 2) {
                         mine = true
                         passed = false
+                        state.free = true
                         state.zoomBy(event.calculateZoom(), event.calculateCentroid(), pan)
                         event.changes.forEach { if (it.positionChanged()) it.consume() }
                     } else if (pressed == 1 && !passed) {
@@ -209,7 +257,7 @@ fun Modifier.zoomable(state: ZoomState, panUnzoomed: Boolean): Modifier = this
                         if (!mine) {
                             travel += pan
                             if (travel.getDistance() > slop) {
-                                mine = state.zoomed || (panUnzoomed && state.canPan(travel))
+                                mine = (onSwipe == null || state.free) && (state.zoomed || (panUnzoomed && state.canPan(travel)))
                                 passed = !mine
                             }
                         }
@@ -224,6 +272,8 @@ fun Modifier.zoomable(state: ZoomState, panUnzoomed: Boolean): Modifier = this
                 if (mine) {
                     val v = tracker.calculateVelocity()
                     launch { state.fling(v.x.coerceIn(-maxV, maxV), v.y.coerceIn(-maxV, maxV), decay) }
+                } else if (passed && onSwipe != null && track.getDistance() > slop * 3) {
+                    onSwipe(track)
                 }
             }
         }

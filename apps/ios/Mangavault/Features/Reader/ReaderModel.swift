@@ -61,6 +61,10 @@ final class ReaderModel {
     var dragPage = 1
 
     @ObservationIgnored private var startPage: Int
+    /// Whether the last move went forward, so guided view knows where to start on a page.
+    @ObservationIgnored var movedForward = true
+    /// Guided view: steps the page on screen one panel; false when it has no panel that way.
+    @ObservationIgnored var guideStep: ((Int) -> Bool)?
     @ObservationIgnored private var reloadToken = 0
 
     init(request: ReaderRequest, app: AppModel) {
@@ -75,6 +79,9 @@ final class ReaderModel {
     }
 
     var settings: AppSettings { app.store.settings }
+    var guided: Bool { settings.guided && mode.isPaged }
+    /// Guided view shows the whole page, so panels zoom from there.
+    var fit: ReaderFit { guided ? .screen : settings.fit }
     var palette: ReaderPalette { ReaderPalette.of(settings.readerBackground) }
 
     // MARK: Lookup
@@ -212,6 +219,7 @@ final class ReaderModel {
     /// Called by the webtoon list and the pager as the reader moves.
     func didShow(_ index: Int) {
         guard items.indices.contains(index) else { return }
+        movedForward = index >= position
         position = index
         let item = items[index]
         switch item.slot {
@@ -256,6 +264,25 @@ final class ReaderModel {
         controls.toggle()
     }
 
+    /// Paged mode: one step forward (+1) or back (-1), a panel in guided view, else a page.
+    func step(_ dir: Int) {
+        if guided, guideStep?(dir) == true { return }
+        go(dir)
+    }
+
+    /// Guided view: swipes step too, since the pager doesn't scroll while it's on.
+    /// `dx`/`dy` is the finger's direction.
+    func swipe(dx: Int, dy: Int) {
+        if moreMenu {
+            moreMenu = false
+            return
+        }
+        let along = mode == .pagedV ? dy : dx
+        guard along != 0 else { return }
+        // Dragging the page left (or up) moves forward; right to left reverses it.
+        step(mode == .rtl ? along : -along)
+    }
+
     /// Paged mode: -1 / +1 through the sequence.
     func go(_ dir: Int) {
         let i = max(0, min(items.count - 1, position + dir))
@@ -269,12 +296,13 @@ final class ReaderModel {
             moreMenu = false
             return
         }
-        if zoomed {
+        // Guided view keeps the tap zones while zoomed into a panel.
+        if zoomed && !guided {
             controls.toggle()
             return
         }
         let dir = TapZones.direction(mode: mode, x: x, y: y, inverted: settings.invertTaps)
-        if dir == 0 { controls.toggle() } else { go(dir) }
+        if dir == 0 { controls.toggle() } else { step(dir) }
     }
 
     func setPage(_ p: Int) {

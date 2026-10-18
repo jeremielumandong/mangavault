@@ -42,6 +42,8 @@ data class ReaderPrefs(
     val keepOn: Boolean = true,
     val showNum: Boolean = true,
     val invert: Boolean = false,
+    /** Paged modes: step through each page panel by panel. */
+    val guided: Boolean = false,
 )
 
 /** The signed-in account, kept in app-private storage. */

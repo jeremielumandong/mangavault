@@ -25,6 +25,8 @@ struct AppSettings: Codable, Equatable {
     var keepScreenOn = true
     var showPageNumber = true
     var invertTaps = false
+    /// Paged modes: step through each page panel by panel.
+    var guided = false
     var pageGap = false
     var dim = true
     var brightness: Double = 100
@@ -81,6 +83,7 @@ extension AppSettings {
         keepScreenOn = c.value(.keepScreenOn, d.keepScreenOn)
         showPageNumber = c.value(.showPageNumber, d.showPageNumber)
         invertTaps = c.value(.invertTaps, d.invertTaps)
+        guided = c.value(.guided, d.guided)
         pageGap = c.value(.pageGap, d.pageGap)
         dim = c.value(.dim, d.dim)
         brightness = c.value(.brightness, d.brightness)

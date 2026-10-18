@@ -121,6 +121,7 @@ fun ReaderSettingsSheet(
             }
             Column(Modifier.padding(top = 14.dp).fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Mv.colors.sr)) {
                 val rows = listOf(
+                    Triple<String, Boolean, (ReaderPrefs) -> ReaderPrefs>("Guided view (panel by panel)", prefs.guided, { p: ReaderPrefs -> p.copy(guided = !p.guided) }),
                     Triple<String, Boolean, (ReaderPrefs) -> ReaderPrefs>("Page gap (webtoon)", prefs.gap, { p: ReaderPrefs -> p.copy(gap = !p.gap) }),
                     Triple<String, Boolean, (ReaderPrefs) -> ReaderPrefs>("Dim overlay", prefs.dim, { p: ReaderPrefs -> p.copy(dim = !p.dim) }),
                     Triple<String, Boolean, (ReaderPrefs) -> ReaderPrefs>("Keep screen on", prefs.keepOn, { p: ReaderPrefs -> p.copy(keepOn = !p.keepOn) }),
