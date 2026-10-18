@@ -2,7 +2,7 @@ import Foundation
 import MangavaultKit
 import Observation
 
-enum LibraryView: String, Codable { case grid, list }
+enum LibraryLayout: String, Codable { case grid, list }
 
 enum LibrarySort: String, Codable, CaseIterable {
     case lastRead = "Last read"
@@ -14,7 +14,7 @@ enum LibrarySort: String, Codable, CaseIterable {
 struct AppSettings: Codable, Equatable {
     var theme: ThemeKind = .dark
     var libCols = 3
-    var libView: LibraryView = .grid
+    var libView: LibraryLayout = .grid
     var libSort: LibrarySort = .lastRead
     var libUnread = false
     /// nil: by title type.
