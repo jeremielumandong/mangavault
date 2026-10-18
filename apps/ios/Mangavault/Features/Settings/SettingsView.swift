@@ -98,16 +98,19 @@ struct SettingsView: View {
                 Text(accSub).mvText(12, .regular, theme.ts).lineLimit(2)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            Button {
-                if app.isSignedIn { app.signOut() } else { app.sheet = .signIn(fromFavorite: false) }
-            } label: {
-                Text(app.isSignedIn ? "Sign out" : "Sign in")
-                    .mvText(13, .semibold, app.isSignedIn ? theme.tp : .white)
-                    .padding(.horizontal, 14)
-                    .frame(height: 36)
-                    .background(app.isSignedIn ? theme.sr : theme.ac, in: Capsule())
+            // Open mode has no account to switch.
+            if !AppConfig.openAccount {
+                Button {
+                    if app.isSignedIn { app.signOut() } else { app.sheet = .signIn(fromFavorite: false) }
+                } label: {
+                    Text(app.isSignedIn ? "Sign out" : "Sign in")
+                        .mvText(13, .semibold, app.isSignedIn ? theme.tp : .white)
+                        .padding(.horizontal, 14)
+                        .frame(height: 36)
+                        .background(app.isSignedIn ? theme.sr : theme.ac, in: Capsule())
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
         }
         .padding(14)
         .background(theme.sf, in: RoundedRectangle(cornerRadius: 12, style: .continuous))

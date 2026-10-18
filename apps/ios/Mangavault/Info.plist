@@ -35,6 +35,8 @@
 	<true/>
 	<key>MVAPIDomain</key>
 	<string>$(API_DOMAIN)</string>
+	<key>MVAuthMode</key>
+	<string>$(AUTH_MODE)</string>
 	<key>MVGoogleClientID</key>
 	<string>$(GOOGLE_IOS_CLIENT_ID)</string>
 	<key>NSAppTransportSecurity</key>

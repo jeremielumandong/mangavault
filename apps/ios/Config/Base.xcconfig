@@ -5,6 +5,7 @@
 API_DOMAIN = api.example.com
 GOOGLE_IOS_CLIENT_ID =
 GOOGLE_IOS_REVERSED_CLIENT_ID = mangavault-google-unset
+AUTH_MODE =
 MV_BUNDLE_ID = dev.mangavault.app
 DEVELOPMENT_TEAM =
 

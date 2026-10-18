@@ -29,6 +29,8 @@ fun configValue(property: String, envName: String): String? {
 val apiDomain = (configValue("apiDomain", "API_DOMAIN") ?: "api.example.com")
     .removePrefix("https://").removePrefix("http://").trimEnd('/')
 val googleWebClientId = configValue("googleWebClientId", "GOOGLE_WEB_CLIENT_ID") ?: ""
+// AUTH_MODE=open: no sign-in; the app uses the backend's single owner account.
+val openAccount = configValue("authMode", "AUTH_MODE") == "open"
 
 android {
     namespace = "dev.mangavault.app"
@@ -42,6 +44,7 @@ android {
         versionName = "1.0"
         buildConfigField("String", "API_BASE_URL", "\"https://$apiDomain/v1\"")
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
+        buildConfigField("boolean", "OPEN_ACCOUNT", "$openAccount")
     }
 
     buildTypes {

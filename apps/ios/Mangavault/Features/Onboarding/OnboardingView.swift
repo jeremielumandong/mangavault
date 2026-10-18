@@ -48,12 +48,14 @@ struct OnboardingView: View {
 
             VStack(spacing: 8) {
                 PrimaryButton(title: "Get started") { step = 2 }
-                Button {
-                    app.sheet = .signIn(fromFavorite: false)
-                } label: {
-                    Text("I already have an account").mvText(15, .medium, theme.tp).frame(maxWidth: .infinity).frame(height: 44)
+                if !AppConfig.openAccount {
+                    Button {
+                        app.sheet = .signIn(fromFavorite: false)
+                    } label: {
+                        Text("I already have an account").mvText(15, .medium, theme.tp).frame(maxWidth: .infinity).frame(height: 44)
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
             .padding(.top, 24)
         }

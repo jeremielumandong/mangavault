@@ -123,6 +123,9 @@ class AppContainer(val app: Application) {
 
     val signedIn: Boolean get() = session.value != null
 
+    /** Built with AUTH_MODE=open: no sign-in UI, one shared owner account. */
+    val openAccount: Boolean = BuildConfig.OPEN_ACCOUNT
+
     /** Summaries seen in lists, so pushed screens can draw a header before their request returns. */
     private val summaries = java.util.concurrent.ConcurrentHashMap<Long, MangaSummary>()
 
@@ -136,7 +139,7 @@ class AppContainer(val app: Application) {
 
     /** Debounced background sync; a no-op when signed out. */
     fun requestSync(delayMs: Long = 1500) {
-        if (!signedIn) return
+        if (!signedIn && !openAccount) return
         syncJob?.cancel()
         syncJob = scope.launch {
             delay(delayMs)
@@ -145,7 +148,7 @@ class AppContainer(val app: Application) {
     }
 
     suspend fun syncNow() {
-        if (!signedIn) return
+        if (!signedIn && !(openAccount && openSignIn())) return
         _sync.value = SyncStatus.Syncing
         _sync.value = try {
             engine.sync()
@@ -156,6 +159,19 @@ class AppContainer(val app: Application) {
         } catch (e: Exception) {
             SyncStatus.Failed(offline = false)
         }
+    }
+
+    /** Open mode: take the owner session, keeping anything already on the phone. */
+    private suspend fun openSignIn(): Boolean {
+        val res = try {
+            api.signIn("open", emptyMap())
+        } catch (e: Exception) {
+            _sync.value = SyncStatus.Failed(offline = (e as? ApiException)?.isNetwork == true)
+            return false
+        }
+        session.set(Session(res.token, res.user, "open"))
+        if (user.value.hasLocalData) user.update { UserOps.markAllPending(it) }
+        return true
     }
 
     fun onSignedIn(res: AuthResponse, provider: String) {
@@ -192,5 +208,10 @@ class AppContainer(val app: Application) {
         session.set(null)
         user.update { it.copy(pending = Pending(), cursors = Cursors()) }
         _sync.value = SyncStatus.Idle
+    }
+
+    // Last, so every property above is initialized before the first sync.
+    init {
+        if (openAccount) requestSync(0)
     }
 }

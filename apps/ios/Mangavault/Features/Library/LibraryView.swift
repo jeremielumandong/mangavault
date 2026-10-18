@@ -30,7 +30,7 @@ struct LibraryView: View {
                     ScreenTitle(title: "Library")
                     Spacer()
                     Button {
-                        if !app.isSignedIn { app.sheet = .signIn(fromFavorite: false) } else { Task { await app.sync.sync() } }
+                        if !app.isSignedIn { app.askSignIn() } else { Task { await app.sync.sync() } }
                     } label: {
                         HStack(spacing: 4) {
                             Image(systemName: syncSymbol).font(.system(size: 13))

@@ -152,6 +152,9 @@ Tokens last 180 days.
 ### `POST /v1/auth/dev`
 Local development only (enabled by `DEV_AUTH=true`): body `{ "name": "Test" }`, same response as above.
 
+### `POST /v1/auth/open`
+Single-user mode only (enabled by `AUTH_MODE=open`): body `{}`. Signs in as the one owner account with no credentials, same response as above. Apps built with `AUTH_MODE=open` call it on launch and hide sign-in. Anyone who can reach the API can then read and change the owner's library, so use it only on a personal deployment.
+
 ### `POST /v1/auth/logout`
 Revokes the current token. `204`.
 

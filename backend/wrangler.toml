@@ -29,6 +29,9 @@ GOOGLE_AUDIENCES = ""
 CRAWL_REFRESH_BUDGET = "15"
 CRAWL_POPULAR_PAGES = "3"
 DEV_AUTH = "false"
+# "open" turns off sign-in: every app uses one shared owner account. Only for a
+# personal deployment; set it as a build variable (scripts/deploy.sh passes it on).
+AUTH_MODE = ""
 
 [observability]
 enabled = true

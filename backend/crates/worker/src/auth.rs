@@ -175,6 +175,8 @@ pub async fn sign_in(app: &App, provider: &str, req: &mut Request) -> ApiResult 
                 .map_err(|e| ApiError::unauthorized(format!("invalid {provider} token: {e:?}")))?;
             (claims.sub, claims.email, body.name.or(claims.name))
         }
+        // Single-user mode: everyone is the owner, so no credentials are checked.
+        "open" if app.config.open_auth => ("owner".to_string(), None, Some("Owner".to_string())),
         // Local development only: sign in as any name without a provider.
         "dev" if app.config.dev_auth => {
             let name = body
