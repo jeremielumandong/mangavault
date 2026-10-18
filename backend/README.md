@@ -74,6 +74,10 @@ The Worker's name in the dashboard must match `name` in `wrangler.toml` (`mangav
 
   Searching also crawls on demand: `curl "https://$API_DOMAIN/v1/search?q=solo%20leveling"` asks every site when the catalog has few matches.
 
+### Single-user mode (no sign-in)
+
+For a personal deployment, add the build variable `AUTH_MODE=open` and put `AUTH_MODE=open` in `config.env` before building the apps. The apps then skip sign-in and sync with one shared owner account through `POST /v1/auth/open`, and you don't need any of the Apple or Google setup below. Anyone who finds the API domain can read and change that library, so switch back to sign-in before sharing the apps: remove the variable, redeploy, and rebuild the apps. `/v1/admin/crawl` still needs `ADMIN_TOKEN`.
+
 ### Sign-in (Apple and Google)
 
 The apps sign in with Apple or Google, and the Worker checks the token's signature and its audience, then issues its own session token. The Worker accepts a token only when its `aud` is listed in `APPLE_AUDIENCES` or `GOOGLE_AUDIENCES`. Set those as Workers Builds build variables, comma-separated. The deploy passes them on, so a deploy never resets them.

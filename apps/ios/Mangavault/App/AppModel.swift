@@ -83,8 +83,13 @@ final class AppModel {
         store.onChange = { [weak self] in self?.sync.scheduleSoon() }
         sync.onUnauthorized = { [weak self] in
             self?.signOut(silently: true)
-            self?.showToast("You were signed out · local data kept")
+            if AppConfig.openAccount {
+                Task { await self?.ensureOpenSession() }
+            } else {
+                self?.showToast("You were signed out · local data kept")
+            }
         }
+        if AppConfig.openAccount { Task { await ensureOpenSession() } }
     }
 
     var theme: Theme { Theme.of(store.settings.theme) }
@@ -133,7 +138,7 @@ final class AppModel {
             })
         } else {
             store.setFavorite(manga, category: store.library[manga.id]?.category ?? "Reading")
-            if isSignedIn {
+            if isSignedIn || AppConfig.openAccount {
                 showToast("Added to Library")
             } else {
                 sheet = .signIn(fromFavorite: true)
@@ -225,6 +230,31 @@ final class AppModel {
         }
     }
 
+    /// Open mode: take the owner session, keeping anything already on the phone.
+    /// Quiet on failure; the next foreground or sync tap tries again.
+    func ensureOpenSession() async {
+        guard AppConfig.openAccount, !isSignedIn, !signingIn else { return }
+        signingIn = true
+        defer { signingIn = false }
+        guard let r = try? await api.signInOpen() else { return }
+        api.token = r.token
+        Keychain.set(r.token, for: "token")
+        store.account = AccountInfo(user: r.user, provider: "Personal")
+        store.cursors = SyncCursors()
+        if store.hasUserData { store.enqueueAll() } else { store.pending = PendingOps() }
+        store.save()
+        await sync.sync()
+    }
+
+    /// Sign in, or in open mode just connect, since there is no account to pick.
+    func askSignIn(fromFavorite: Bool = false) {
+        if AppConfig.openAccount {
+            Task { await ensureOpenSession() }
+        } else {
+            sheet = .signIn(fromFavorite: fromFavorite)
+        }
+    }
+
     func mergeAndSync() {
         sheet = nil
         store.enqueueAll()
@@ -261,7 +291,11 @@ final class AppModel {
 
     /// Foreground: pull other devices' changes.
     func refreshOnForeground() {
-        if isSignedIn { Task { await sync.sync() } }
+        if isSignedIn {
+            Task { await sync.sync() }
+        } else if AppConfig.openAccount {
+            Task { await ensureOpenSession() }
+        }
         ImagePipeline.shared.trimDisk()
     }
 }

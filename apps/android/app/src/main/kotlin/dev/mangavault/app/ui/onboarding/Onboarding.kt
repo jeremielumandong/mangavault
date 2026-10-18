@@ -95,11 +95,13 @@ private fun Welcome(container: AppContainer, onNext: () -> Unit) {
         }
         Column(Modifier.padding(top = 24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             PrimaryButton("Get started", onNext, Modifier.fillMaxWidth())
-            Box(
-                Modifier.fillMaxWidth().height(44.dp).clip(RoundedCornerShape(12.dp))
-                    .clickable { container.sheets.signIn.value = "default" },
-                contentAlignment = Alignment.Center,
-            ) { Text("I already have an account", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Mv.colors.tp) }
+            if (!container.openAccount) {
+                Box(
+                    Modifier.fillMaxWidth().height(44.dp).clip(RoundedCornerShape(12.dp))
+                        .clickable { container.sheets.signIn.value = "default" },
+                    contentAlignment = Alignment.Center,
+                ) { Text("I already have an account", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Mv.colors.tp) }
+            }
         }
     }
 }

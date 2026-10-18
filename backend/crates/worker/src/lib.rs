@@ -22,6 +22,9 @@ pub struct Config {
     pub google_audiences: Vec<String>,
     /// Enables POST /v1/auth/dev for local development.
     pub dev_auth: bool,
+    /// `AUTH_MODE=open`: POST /v1/auth/open signs anyone in as the one owner
+    /// account, with no provider. For a personal deployment only.
+    pub open_auth: bool,
     /// Series refreshed per cron run.
     pub refresh_budget: u32,
     /// Popular-list pages per site per backfill run.
@@ -45,6 +48,7 @@ impl Config {
             apple_audiences: list("APPLE_AUDIENCES"),
             google_audiences: list("GOOGLE_AUDIENCES"),
             dev_auth: var("DEV_AUTH") == "true",
+            open_auth: var("AUTH_MODE") == "open",
             refresh_budget: var("CRAWL_REFRESH_BUDGET").parse().unwrap_or(15),
             popular_pages: var("CRAWL_POPULAR_PAGES").parse().unwrap_or(3),
             admin_token: env

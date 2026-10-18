@@ -209,6 +209,12 @@ public final class APIClient: @unchecked Sendable {
         return try decode(AuthResponse.self, try await send("POST", "auth/dev", body: body(B(name: name))))
     }
 
+    /// Single-user backends (AUTH_MODE=open): the owner session, no credentials.
+    public func signInOpen() async throws -> AuthResponse {
+        struct B: Encodable {}
+        return try decode(AuthResponse.self, try await send("POST", "auth/open", body: body(B())))
+    }
+
     public func logout() async throws {
         _ = try await send("POST", "auth/logout")
     }

@@ -3,6 +3,7 @@
 # config.env, or from environment variables in CI:
 #   API_DOMAIN            backend domain, e.g. api.example.com (or http://localhost:8787)
 #   GOOGLE_IOS_CLIENT_ID  iOS OAuth client id from Google Cloud (optional)
+#   AUTH_MODE             "open" for no sign-in (backend must match; optional)
 #   DEVELOPMENT_TEAM      Apple team id for device builds (optional)
 #   MV_BUNDLE_ID          bundle id override (optional)
 set -euo pipefail
@@ -15,6 +16,7 @@ out="$here/Config/Config.local.xcconfig"
 # (Plain variables: macOS ships bash 3.2, without associative arrays.)
 env_domain="${API_DOMAIN:-}"
 env_client="${GOOGLE_IOS_CLIENT_ID:-}"
+env_auth="${AUTH_MODE:-}"
 env_team="${DEVELOPMENT_TEAM:-}"
 env_bundle="${MV_BUNDLE_ID:-}"
 if [[ -f "$root/config.env" ]]; then
@@ -25,6 +27,7 @@ if [[ -f "$root/config.env" ]]; then
 fi
 [[ -n "$env_domain" ]] && API_DOMAIN="$env_domain"
 [[ -n "$env_client" ]] && GOOGLE_IOS_CLIENT_ID="$env_client"
+[[ -n "$env_auth" ]] && AUTH_MODE="$env_auth"
 [[ -n "$env_team" ]] && DEVELOPMENT_TEAM="$env_team"
 [[ -n "$env_bundle" ]] && MV_BUNDLE_ID="$env_bundle"
 
@@ -43,6 +46,7 @@ escape() { printf '%s' "$1" | sed 's#//#/$()/#g'; }
   echo "API_DOMAIN = $(escape "$domain")"
   echo "GOOGLE_IOS_CLIENT_ID = $client"
   echo "GOOGLE_IOS_REVERSED_CLIENT_ID = $reversed"
+  echo "AUTH_MODE = ${AUTH_MODE:-}"
   if [[ -n "${DEVELOPMENT_TEAM:-}" ]]; then echo "DEVELOPMENT_TEAM = $DEVELOPMENT_TEAM"; fi
   if [[ -n "${MV_BUNDLE_ID:-}" ]]; then echo "MV_BUNDLE_ID = $MV_BUNDLE_ID"; fi
 } > "$out"

@@ -22,6 +22,11 @@ enum AppConfig {
         return (v?.isEmpty ?? true) ? nil : v
     }
 
+    /// AUTH_MODE=open: no sign-in; the app uses the backend's one owner account.
+    static var openAccount: Bool {
+        (Bundle.main.object(forInfoDictionaryKey: "MVAuthMode") as? String) == "open"
+    }
+
     static var version: String {
         let v = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
         let b = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"

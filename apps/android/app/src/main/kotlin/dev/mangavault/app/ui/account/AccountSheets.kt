@@ -21,6 +21,7 @@ import androidx.compose.material.icons.rounded.CloudSync
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -66,7 +67,17 @@ fun Context.findActivity(): Activity? {
 fun AccountSheetsHost(container: AppContainer) {
     val signIn by container.sheets.signIn.collectAsStateWithLifecycle()
     val merge by container.sheets.merge.collectAsStateWithLifecycle()
-    signIn?.let { ctx -> SignInSheet(container, ctx) { container.sheets.signIn.value = null } }
+    if (container.openAccount) {
+        // Nothing to sign in to: sync instead.
+        LaunchedEffect(signIn) {
+            if (signIn != null) {
+                container.sheets.signIn.value = null
+                container.requestSync(0)
+            }
+        }
+    } else {
+        signIn?.let { ctx -> SignInSheet(container, ctx) { container.sheets.signIn.value = null } }
+    }
     if (merge) MergeSheet(container)
 }
 

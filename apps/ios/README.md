@@ -31,6 +31,7 @@ The backend domain is a build setting and never lives in the repository. `script
 | --- | --- | --- |
 | `API_DOMAIN` | Backend host. The app calls `https://<API_DOMAIN>/v1`. A value that already has a scheme is used as is, for example `http://localhost:8787` for a local Worker. | `api.example.com` |
 | `GOOGLE_IOS_CLIENT_ID` | iOS OAuth client from Google Cloud. The reversed id becomes the redirect URL scheme. Leave it empty and the Google button reports that sign-in isn't configured. | empty |
+| `AUTH_MODE` | `open` for a backend in single-user mode: no sign-in screens, and the app syncs with the owner account on its own. | empty |
 | `DEVELOPMENT_TEAM` | Apple team id for device builds. | empty |
 | `MV_BUNDLE_ID` | Bundle id. Change it if `dev.mangavault.app` is taken on your team. | `dev.mangavault.app` |
 

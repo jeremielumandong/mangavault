@@ -129,7 +129,7 @@ fun SettingsScreen(nav: Navigator) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(if (s != null) name ?: "Signed in" else "Not signed in", fontSize = 15.sp, fontWeight = SemiBold)
                 val sub = if (s == null) "Favorites and progress stay on this phone" else {
-                    val provider = when (s.provider) { "google" -> "Google"; "apple" -> "Apple ID"; else -> "Dev account" }
+                    val provider = when (s.provider) { "google" -> "Google"; "apple" -> "Apple ID"; "open" -> "Personal"; else -> "Dev account" }
                     val when_ = when (val st = sync) {
                         is SyncStatus.Done -> {
                             val min = ((System.currentTimeMillis() - st.at) / 60_000).toInt()
@@ -143,7 +143,9 @@ fun SettingsScreen(nav: Navigator) {
                 }
                 Text(sub, fontSize = 12.sp, lineHeight = 16.sp, color = Mv.colors.ts)
             }
-            if (s != null) {
+            if (c.openAccount) {
+                // No account to switch in open mode.
+            } else if (s != null) {
                 PillButton("Sign out", {
                     c.signOut()
                     c.toasts.show("Signed out · local data kept")

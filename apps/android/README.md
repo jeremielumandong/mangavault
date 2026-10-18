@@ -30,6 +30,8 @@ Two values, `API_DOMAIN` and `GOOGLE_WEB_CLIENT_ID`, are read at build time and 
 
 The domain becomes `BuildConfig.API_BASE_URL = "https://<domain>/v1"`. With no client id, tapping the Google button shows a message that sign-in isn't configured. Debug builds also show **Dev sign-in** (`POST /v1/auth/dev`), which works against a backend with dev auth enabled.
 
+`AUTH_MODE=open` (Gradle property `authMode`, the environment, or `config.env`) builds the app for a backend in single-user mode: no sign-in screens, and the app syncs with the owner account on its own.
+
 The Google client id is the **web** OAuth client, the one listed in the Worker's `GOOGLE_AUDIENCES`. Credential Manager also needs an Android OAuth client in the same Google Cloud project, registered with this app's package name and your signing certificate's SHA-1.
 
 ## Build and run
