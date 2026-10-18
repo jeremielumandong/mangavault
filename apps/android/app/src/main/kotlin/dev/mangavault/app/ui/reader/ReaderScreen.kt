@@ -60,6 +60,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
@@ -74,6 +75,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -382,7 +384,11 @@ private fun Webtoon(
     val currentItems by rememberUpdatedState(items)
     val longPress by rememberUpdatedState(onLongPress)
     val list = remember { LazyListState(firstVisibleItemIndex = startIndex) }
-    val zoom = remember { ZoomState() }
+    val zoom = remember {
+        // Zoomed in, vertical pans scroll the strip (in its unscaled pixels) and run past its ends.
+        ZoomState().apply { scrollList = { dy -> -list.dispatchRawDelta(-dy / scale) * scale } }
+    }
+    val zoomed by remember { derivedStateOf { zoom.zoomed } }
     val scope = rememberCoroutineScope()
     val hideAfter = with(LocalDensity.current) { 90.dp.toPx() }
 
@@ -417,7 +423,8 @@ private fun Webtoon(
 
     Box(
         Modifier.fillMaxSize()
-            .pinchZoom(zoom, panWhenZoomed = false)
+            .clipToBounds()
+            .zoomable(zoom, panUnzoomed = false)
             .pointerInput(Unit) {
                 detectTapGestures(
                     onTap = { if (!onMore()) setControls(!controls()) },
@@ -432,6 +439,7 @@ private fun Webtoon(
         LazyColumn(
             state = list,
             modifier = Modifier.fillMaxSize().zoomLayer(zoom).nestedScroll(hideOnScroll),
+            userScrollEnabled = !zoomed,
         ) {
             items(items.size, key = { i -> keyOf(items[i]) }, contentType = { i -> items[i]::class }) { i ->
                 when (val x = items[i]) {
@@ -528,12 +536,13 @@ private fun Paged(
 ) {
     val items = ui.items
     val pager = rememberPagerState(initialPage = startIndex.coerceIn(0, (items.size - 1).coerceAtLeast(0))) { items.size }
-    val zoom = remember { ZoomState() }
+    // Each page zooms on its own; this is whether the page on screen is zoomed in.
+    var zoomed by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(pager) {
         snapshotFlow { pager.currentPage }.distinctUntilChanged().collect {
-            zoom.reset()
+            zoomed = false
             onCurrent(it)
         }
     }
@@ -545,7 +554,7 @@ private fun Paged(
 
     fun onTap(at: Offset, size: IntSize) {
         if (onMore()) return
-        if (zoom.zoomed || size.width == 0 || size.height == 0) {
+        if (zoomed || size.width == 0 || size.height == 0) {
             onTapCenter()
             return
         }
@@ -569,7 +578,8 @@ private fun Paged(
     val content: @Composable (Int) -> Unit = { i ->
         when (val x = items[i]) {
             is ReaderItem.PageItem -> PagedPage(
-                x.page, x.pageNumber, x.seg.data.imageHeaders, palette, retryKeys[x.key] ?: 0, fit, zoom,
+                x.page, x.pageNumber, x.seg.data.imageHeaders, palette, retryKeys[x.key] ?: 0, fit,
+                active = i == pager.currentPage, onZoomed = { if (i == pager.currentPage) zoomed = it },
                 onTap = ::onTap, onLongPress = { onLongPress(x) },
             )
             is ReaderItem.Transition -> TapSurface(::onTap) {
@@ -585,12 +595,12 @@ private fun Paged(
         if (mode == ReaderModes.PAGED_VERTICAL) {
             VerticalPager(
                 state = pager, modifier = Modifier.fillMaxSize(), beyondViewportPageCount = 1,
-                userScrollEnabled = !zoom.zoomed, key = { keyOf(items[it]) },
+                userScrollEnabled = !zoomed, key = { keyOf(items[it]) },
             ) { content(it) }
         } else {
             HorizontalPager(
                 state = pager, modifier = Modifier.fillMaxSize(), beyondViewportPageCount = 1,
-                reverseLayout = mode == ReaderModes.RTL, userScrollEnabled = !zoom.zoomed, key = { keyOf(items[it]) },
+                reverseLayout = mode == ReaderModes.RTL, userScrollEnabled = !zoomed, key = { keyOf(items[it]) },
             ) { content(it) }
         }
     }

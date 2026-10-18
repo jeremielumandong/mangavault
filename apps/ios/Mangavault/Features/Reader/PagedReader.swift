@@ -135,6 +135,9 @@ final class ReaderPageController: UIViewController, UIScrollViewDelegate, UIGest
     private let fail = PageFailView()
     private var host: UIHostingController<AnyView>?
     private var task: Task<Void, Never>?
+    /// Bounds and image size the page was last laid out for, so other layout passes don't
+    /// jump a page the reader has panned back to the top.
+    private var laidOut: (CGSize, CGSize?)?
 
     init(model: ReaderModel, item: ReaderItem, index: Int) {
         self.model = model
@@ -197,7 +200,9 @@ final class ReaderPageController: UIViewController, UIScrollViewDelegate, UIGest
         scroll.showsVerticalScrollIndicator = false
         scroll.showsHorizontalScrollIndicator = false
         scroll.contentInsetAdjustmentBehavior = .never
-        scroll.decelerationRate = .fast
+        // Normal deceleration gives a zoomed page a long momentum glide after a flick.
+        scroll.decelerationRate = .normal
+        scroll.bouncesZoom = true
         scroll.frame = view.bounds
         scroll.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         view.addSubview(scroll)
@@ -231,6 +236,7 @@ final class ReaderPageController: UIViewController, UIScrollViewDelegate, UIGest
         view.backgroundColor = pal.uiBackground
         shimmer.colors(pal.uiSk, pal.uiSk2)
         fail.style(pal, accent: UIColor(model.app.theme.ac))
+        laidOut = nil
         if isViewLoaded { view.setNeedsLayout() }
     }
 
@@ -280,12 +286,16 @@ final class ReaderPageController: UIViewController, UIScrollViewDelegate, UIGest
         shimmer.isHidden = true
         fail.isHidden = true
         scroll.zoomScale = 1
+        laidOut = nil
         view.setNeedsLayout()
     }
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         guard item.isPage, scroll.zoomScale == 1 else { return }
+        let key = (view.bounds.size, imageView.image?.size)
+        if let last = laidOut, last.0 == key.0, last.1 == key.1 { return }
+        laidOut = key
         layoutImage()
     }
 
