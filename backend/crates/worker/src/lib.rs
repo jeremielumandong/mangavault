@@ -26,6 +26,8 @@ pub struct Config {
     pub refresh_budget: u32,
     /// Popular-list pages per site per backfill run.
     pub popular_pages: u32,
+    /// Secret for POST /v1/admin/crawl; the endpoint is off when unset.
+    pub admin_token: Option<String>,
 }
 
 impl Config {
@@ -45,6 +47,11 @@ impl Config {
             dev_auth: var("DEV_AUTH") == "true",
             refresh_budget: var("CRAWL_REFRESH_BUDGET").parse().unwrap_or(15),
             popular_pages: var("CRAWL_POPULAR_PAGES").parse().unwrap_or(3),
+            admin_token: env
+                .secret("ADMIN_TOKEN")
+                .map(|v| v.to_string())
+                .ok()
+                .filter(|t| !t.is_empty()),
         }
     }
 }

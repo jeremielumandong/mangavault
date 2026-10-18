@@ -155,6 +155,9 @@ Local development only (enabled by `DEV_AUTH=true`): body `{ "name": "Test" }`, 
 ### `POST /v1/auth/logout`
 Revokes the current token. `204`.
 
+### `POST /v1/admin/crawl?job=latest|popular`
+Operator only: runs a crawl now instead of waiting for the cron. Needs `Authorization: Bearer <ADMIN_TOKEN>` (a Worker secret); returns 404 when `ADMIN_TOKEN` is unset. Response: `{ "job": "popular", "series": 120 }`.
+
 ### `GET /v1/me`
 `{ "user": { "id": 1, "name": "...", "email": "..." } }`
 

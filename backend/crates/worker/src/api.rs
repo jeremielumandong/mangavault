@@ -10,7 +10,7 @@ use worker::{Method, Request, Response};
 use crate::args;
 use crate::catalog::{self, CHAPTER_COLS, Chapter, MangaSummary, SERIES_COLS, SeriesRow};
 use crate::db::Arg;
-use crate::{App, auth, sync, time};
+use crate::{App, auth, crawl, sync, time};
 
 pub struct ApiError {
     pub status: u16,
@@ -148,6 +148,8 @@ pub async fn route(app: &App, mut req: Request) -> ApiResult {
         }
         (Get, ["v1", "chapters", id, "pages"]) => pages(app, parse_id(id)?).await,
 
+        (Post, ["v1", "admin", "crawl"]) => admin_crawl(app, &req, &Query::of(&req)?).await,
+
         (Post, ["v1", "auth", "logout"]) => auth::logout(app, &req).await,
         (Post, ["v1", "auth", provider]) => auth::sign_in(app, provider, &mut req).await,
         (Get, ["v1", "me"]) => auth::me(app, &req).await,
@@ -157,6 +159,35 @@ pub async fn route(app: &App, mut req: Request) -> ApiResult {
         }
         _ => Err(ApiError::not_found(format!("no route for {}", url.path()))),
     }
+}
+
+// ── Admin ──────────────────────────────────────────────────────────────
+
+/// Runs a crawl now instead of waiting for the cron: `?job=latest` (default)
+/// or `?job=popular`. Needs `Authorization: Bearer <ADMIN_TOKEN>`.
+async fn admin_crawl(app: &App, req: &Request, q: &Query) -> ApiResult {
+    let Some(expected) = app.config.admin_token.as_deref() else {
+        return Err(ApiError::not_found("admin endpoints are disabled"));
+    };
+    let given = auth::bearer(req).unwrap_or_default();
+    if !constant_time_eq(given.as_bytes(), expected.as_bytes()) {
+        return Err(ApiError::unauthorized("bad admin token"));
+    }
+    let (job, cron) = match q.get("job").unwrap_or("latest") {
+        "latest" => ("latest", crawl::LATEST_CRON),
+        "popular" => ("popular", crawl::POPULAR_CRON),
+        other => return Err(ApiError::bad_request(format!("unknown job {other}"))),
+    };
+    crawl::run(app, cron).await;
+    let series: Option<i64> = app
+        .db
+        .value("SELECT COUNT(*) AS n FROM series", args![], "n")
+        .await?;
+    json(&json!({ "job": job, "series": series.unwrap_or(0) }))
+}
+
+fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
+    a.len() == b.len() && a.iter().zip(b).fold(0u8, |acc, (x, y)| acc | (x ^ y)) == 0
 }
 
 // ── Catalog ────────────────────────────────────────────────────────────

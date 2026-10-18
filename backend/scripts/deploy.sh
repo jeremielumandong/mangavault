@@ -20,22 +20,17 @@ fi
 : "${API_DOMAIN:?set API_DOMAIN (build variable or config.env)}"
 : "${D1_DATABASE_ID:?set D1_DATABASE_ID (build variable or config.env)}"
 
-# In Cloudflare Workers Builds (WORKERS_CI) or other CI, install the Rust
-# toolchain and worker-build when missing. Locally, install them yourself.
-[[ -f "$HOME/.cargo/env" ]] && source "$HOME/.cargo/env"
-if [[ -n "${WORKERS_CI:-}${CI:-}" ]]; then
-  if ! command -v cargo >/dev/null; then
-    curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
-    source "$HOME/.cargo/env"
-  fi
-  rustup target add wasm32-unknown-unknown
-  command -v worker-build >/dev/null || cargo install worker-build@0.8.7 --locked
-fi
-
 # A throwaway config with the real database id; never committed.
 GENERATED="wrangler.deploy.toml"
 trap 'rm -f "$GENERATED"' EXIT
 sed "s/^database_id = .*/database_id = \"$D1_DATABASE_ID\"/" wrangler.toml > "$GENERATED"
 
 npx wrangler d1 migrations apply mangavault --remote -c "$GENERATED"
-npx wrangler deploy -c "$GENERATED" --domain "$API_DOMAIN"
+# Sign-in audiences can also come from build variables (they would otherwise
+# be reset to the empty [vars] in wrangler.toml on every deploy).
+VARS=()
+for key in APPLE_AUDIENCES GOOGLE_AUDIENCES; do
+  if [[ -n "${!key:-}" ]]; then VARS+=(--var "$key:${!key}"); fi
+done
+
+npx wrangler deploy -c "$GENERATED" --domain "$API_DOMAIN" ${VARS[@]+"${VARS[@]}"}
