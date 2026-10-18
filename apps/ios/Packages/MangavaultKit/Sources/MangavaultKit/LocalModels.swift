@@ -31,10 +31,13 @@ public struct ProgressEntry: Codable, Hashable, Sendable {
     public var pageCount: Int?
     public var completed: Bool
     public var updatedAt: String
+    /// Removed from Continue reading (nil in older saves means no). The next
+    /// read clears it.
+    public var hidden: Bool?
 
     public init(
         mangaId: Int, chapterId: Int, chapterNumber: Double?, chapterIndex: Int?, page: Int, pageCount: Int?,
-        completed: Bool, updatedAt: String
+        completed: Bool, updatedAt: String, hidden: Bool? = nil
     ) {
         self.mangaId = mangaId
         self.chapterId = chapterId
@@ -44,12 +47,15 @@ public struct ProgressEntry: Codable, Hashable, Sendable {
         self.pageCount = pageCount
         self.completed = completed
         self.updatedAt = updatedAt
+        self.hidden = hidden
     }
+
+    public var isHidden: Bool { hidden == true }
 
     public var putItem: ProgressPutItem {
         ProgressPutItem(
             mangaId: mangaId, chapterId: chapterId, page: page, pageCount: pageCount, completed: completed,
-            updatedAt: updatedAt)
+            hidden: isHidden, updatedAt: updatedAt)
     }
 
     /// 0…1 through the current chapter.
@@ -155,7 +161,8 @@ public enum Merge {
         return ProgressEntry(
             mangaId: remote.mangaId, chapterId: remote.chapterId, chapterNumber: remote.chapterNumber,
             chapterIndex: sameChapter ? local?.chapterIndex : nil, page: max(1, remote.page),
-            pageCount: remote.pageCount, completed: remote.completed, updatedAt: remote.updatedAt)
+            pageCount: remote.pageCount, completed: remote.completed, updatedAt: remote.updatedAt,
+            hidden: remote.hidden == true ? true : nil)
     }
 
     public static func read(_ local: ReadMark?, _ remote: RemoteReadMark) -> ReadMark? {
@@ -190,10 +197,10 @@ public enum Reading {
     }
 
     /// Continue-reading order: most recent first, finished series without
-    /// anything new left out.
+    /// anything new and ones the reader removed left out.
     public static func continueList(_ progress: [ProgressEntry], latest: (Int) -> Double?) -> [ProgressEntry] {
         progress
-            .filter { !isCaughtUp(latest: latest($0.mangaId), progress: $0) }
+            .filter { !$0.isHidden && !isCaughtUp(latest: latest($0.mangaId), progress: $0) }
             .sorted { ISO.isLater($0.updatedAt, than: $1.updatedAt) }
     }
 
@@ -215,11 +222,12 @@ public enum Reading {
 public enum Categories {
     public static let defaults = ["Reading", "Plan to read", "Completed"]
 
-    /// Defaults first, then custom ones in the order they were made, then any
-    /// that only exist on synced entries.
-    public static func all(custom: [String], used: [String?]) -> [String] {
+    /// Defaults first (minus any the reader deleted), then custom ones in the
+    /// order they were made, then any that only exist on synced entries.
+    public static func all(custom: [String], used: [String?], removed: [String] = []) -> [String] {
         var out: [String] = []
-        for c in defaults + custom + used.compactMap({ $0 }) where !c.isEmpty && !out.contains(c) {
+        let kept = defaults.filter { !removed.contains($0) }
+        for c in kept + custom + used.compactMap({ $0 }) where !c.isEmpty && !out.contains(c) {
             out.append(c)
         }
         return out

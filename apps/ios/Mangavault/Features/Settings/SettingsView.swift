@@ -6,6 +6,8 @@ struct SettingsView: View {
     @Environment(\.theme) private var theme
     @Environment(\.openURL) private var openURL
     @State private var cacheSize: Int64?
+    @State private var stats: CatalogStats?
+    @State private var statsFailed = false
 
     private var store: LocalStore { app.store }
     private var s: AppSettings { store.settings }
@@ -62,6 +64,17 @@ struct SettingsView: View {
                         store.settings.dataSaver.toggle()
                     }
                 }
+                section("Server catalog") {
+                    row("books.vertical", "Series", value: stats.map { Fmt.count($0.series) } ?? statsPlaceholder, first: true) {
+                        Task { await loadStats() }
+                    }
+                    row("book.pages", "Chapters", value: stats.map { Fmt.count($0.chapters) } ?? statsPlaceholder) {
+                        Task { await loadStats() }
+                    }
+                    row("clock.arrow.circlepath", "Last chapter update", value: lastUpdateText) {
+                        Task { await loadStats() }
+                    }
+                }
                 section("About") {
                     row("bubble.left", "Send feedback", chevron: true, first: true) {
                         if let u = URL(string: "mailto:?subject=Mangavault%20feedback%20(\(AppConfig.version.replacingOccurrences(of: " ", with: "%20")))") {
@@ -83,6 +96,25 @@ struct SettingsView: View {
         .background(theme.bg)
         .toolbar(.hidden, for: .navigationBar)
         .task { cacheSize = await ImagePipeline.shared.diskSize() }
+        .task { await loadStats() }
+    }
+
+    // MARK: Server catalog
+
+    private var statsPlaceholder: String { statsFailed ? "Unavailable" : "…" }
+
+    private var lastUpdateText: String {
+        guard let stats else { return statsPlaceholder }
+        return Fmt.shortDate(stats.latestUpdateAt) ?? "None yet"
+    }
+
+    private func loadStats() async {
+        statsFailed = false
+        do {
+            stats = try await app.api.stats()
+        } catch {
+            statsFailed = stats == nil
+        }
     }
 
     // MARK: Account

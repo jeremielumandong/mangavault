@@ -65,6 +65,9 @@ object Format {
         }
     }
 
+    /** 12345 → "12,345" */
+    fun count(n: Long): String = String.format(Locale.US, "%,d", n)
+
     fun plural(n: Int, one: String, many: String = one + "s") = "$n ${if (n == 1) one else many}"
 }
 

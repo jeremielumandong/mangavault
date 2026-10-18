@@ -44,6 +44,7 @@ class SyncEngineTest {
 
         override suspend fun genres() = emptyList<String>()
         override suspend fun home() = HomeFeed()
+        override suspend fun stats() = dev.mangavault.core.model.CatalogStats()
         override suspend fun browse(query: BrowseQuery) = MangaPage()
         override suspend fun search(q: String, query: BrowseQuery) = MangaPage()
         override suspend fun manga(id: Long): MangaDetail = error("unused")

@@ -76,6 +76,14 @@ public enum Fmt {
         return parts.joined(separator: " · ")
     }
 
+    /// 12345 → "12,345"
+    public static func count(_ n: Int) -> String {
+        let f = NumberFormatter()
+        f.locale = Locale(identifier: "en_US")
+        f.numberStyle = .decimal
+        return f.string(from: NSNumber(value: n)) ?? "\(n)"
+    }
+
     public static func plural(_ n: Int, _ one: String, _ many: String? = nil) -> String {
         "\(n) " + (n == 1 ? one : (many ?? one + "s"))
     }

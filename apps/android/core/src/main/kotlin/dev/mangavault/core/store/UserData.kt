@@ -48,6 +48,8 @@ data class ProgressEntry(
     val pageCount: Int? = null,
     val completed: Boolean = false,
     val updatedAt: String,
+    /** Removed from Continue reading; the next read clears it. */
+    val hidden: Boolean = false,
 )
 
 @Serializable
@@ -119,6 +121,49 @@ object UserOps {
         return d.copy(
             library = d.library + (id to old.copy(deleted = true, updatedAt = now)),
             pending = d.pending.copy(library = d.pending.library + id),
+        )
+    }
+
+    /** Moves favorites to [category] (null = no category). */
+    fun setCategory(d: UserData, ids: Collection<Long>, category: String?, now: String = isoNow()): UserData {
+        val lib = d.library.toMutableMap()
+        val changed = ids.filter { lib[it]?.deleted == false && lib[it]?.category != category }
+        changed.forEach { id -> lib[id] = lib.getValue(id).copy(category = category, updatedAt = now) }
+        val cats = if (category != null && category !in d.categories) d.categories + category else d.categories
+        return d.copy(library = lib, categories = cats, pending = d.pending.copy(library = d.pending.library + changed))
+    }
+
+    fun removeFavorites(d: UserData, ids: Collection<Long>, now: String = isoNow()): UserData =
+        ids.fold(d) { acc, id -> if (acc.isFavorite(id)) removeFavorite(acc, id, now) else acc }
+
+    /** Undo for [removeFavorites]: puts the entries back as they were, with a newer timestamp. */
+    fun restoreFavorites(d: UserData, entries: Collection<LibraryEntry>, now: String = isoNow()): UserData {
+        val lib = d.library.toMutableMap()
+        entries.forEach { lib[it.mangaId] = it.copy(deleted = false, updatedAt = now) }
+        return d.copy(library = lib, pending = d.pending.copy(library = d.pending.library + entries.map { it.mangaId }))
+    }
+
+    fun renameCategory(d: UserData, from: String, to: String, now: String = isoNow()): UserData {
+        val name = to.trim()
+        if (name.isEmpty() || name == from) return d
+        val ids = d.favorites.filter { it.category == from }.map { it.mangaId }
+        val cats = d.categories.map { if (it == from) name else it }.distinct()
+        return setCategory(d.copy(categories = cats), ids, name, now)
+    }
+
+    /** Drops a category; its titles stay in the library without one. */
+    fun deleteCategory(d: UserData, name: String, now: String = isoNow()): UserData {
+        val ids = d.favorites.filter { it.category == name }.map { it.mangaId }
+        return setCategory(d.copy(categories = d.categories - name), ids, null, now)
+    }
+
+    /** Removes a series from (or puts it back on) Continue reading. Progress itself is kept. */
+    fun setContinueHidden(d: UserData, id: Long, hidden: Boolean, now: String = isoNow()): UserData {
+        val p = d.progress[id] ?: return d
+        if (p.hidden == hidden) return d
+        return d.copy(
+            progress = d.progress + (id to p.copy(hidden = hidden, updatedAt = now)),
+            pending = d.pending.copy(progress = d.pending.progress + id),
         )
     }
 

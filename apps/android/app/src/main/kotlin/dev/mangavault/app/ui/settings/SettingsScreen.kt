@@ -20,6 +20,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ViewList
 import androidx.compose.material.icons.rounded.AutoStories
+import androidx.compose.material.icons.rounded.CollectionsBookmark
+import androidx.compose.material.icons.automirrored.rounded.MenuBook
+import androidx.compose.material.icons.rounded.Update
 import androidx.compose.material.icons.automirrored.rounded.Chat
 import androidx.compose.material.icons.rounded.Contrast
 import androidx.compose.material.icons.rounded.Description
@@ -67,6 +70,8 @@ import dev.mangavault.app.ui.components.Segmented
 import dev.mangavault.app.ui.components.SettingRow
 import dev.mangavault.app.ui.theme.Mv
 import dev.mangavault.app.ui.theme.SemiBold
+import dev.mangavault.core.model.CatalogStats
+import dev.mangavault.core.util.Format
 import dev.mangavault.core.util.ReaderModes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -100,6 +105,13 @@ fun SettingsScreen(nav: Navigator) {
     LaunchedEffect(Unit) {
         cacheBytes = withContext(Dispatchers.IO) { SingletonImageLoader.get(ctx).diskCache?.size ?: 0L }
     }
+    var stats by remember { mutableStateOf<CatalogStats?>(null) }
+    var statsFailed by remember { mutableStateOf(false) }
+    fun loadStats() = scope.launch {
+        statsFailed = false
+        runCatching { c.api.stats() }.onSuccess { stats = it }.onFailure { statsFailed = stats == null }
+    }
+    LaunchedEffect(Unit) { loadStats() }
     val r = prefs.reader
     fun reader(f: (dev.mangavault.core.store.ReaderPrefs) -> dev.mangavault.core.store.ReaderPrefs) =
         c.prefs.update { it.copy(reader = f(it.reader)) }
@@ -201,6 +213,18 @@ fun SettingsScreen(nav: Navigator) {
             }, true, value = if (cacheBytes < 0) "…" else bytes(cacheBytes))
             SettingRow(Icons.Rounded.Download, "Prefetch pages", { c.prefs.update { it.copy(prefetch = listOf(3, 5, 8, 10).after(it.prefetch)) } }, false, value = "${prefs.prefetch}")
             SettingRow(Icons.Rounded.SignalCellularAlt, "Data saver on cellular", { c.prefs.update { it.copy(dataSaver = !it.dataSaver) } }, false, toggle = prefs.dataSaver)
+        }
+
+        GroupLabel("Server catalog")
+        Card {
+            val st = stats
+            val pending = if (statsFailed) "Unavailable" else "…"
+            SettingRow(Icons.Rounded.CollectionsBookmark, "Series", { loadStats() }, true, value = st?.let { Format.count(it.series) } ?: pending)
+            SettingRow(Icons.AutoMirrored.Rounded.MenuBook, "Chapters", { loadStats() }, false, value = st?.let { Format.count(it.chapters) } ?: pending)
+            SettingRow(
+                Icons.Rounded.Update, "Last chapter update", { loadStats() }, false,
+                value = st?.latestUpdateAt?.let { Format.date(it) } ?: if (st != null) "None yet" else pending,
+            )
         }
 
         GroupLabel("About")

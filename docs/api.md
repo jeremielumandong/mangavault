@@ -133,6 +133,13 @@ One request for the Home screen's discover rows.
 ```
 Each row holds up to 20 items. Personal rows (continue reading, updated favorites) come from `/v1/me/...` endpoints below.
 
+### `GET /v1/stats`
+How big the catalog is, counted the way the lists count it (series that have chapters or haven't been fetched yet).
+```json
+{ "series": 12345, "chapters": 456789, "latestUpdateAt": "2026-10-18T08:00:00Z" }
+```
+`latestUpdateAt` is the newest chapter update in the catalog, or `null`. Cached for 5 minutes.
+
 ## Accounts
 
 ### `POST /v1/auth/apple`
@@ -205,15 +212,16 @@ With `since`, includes removed items (`deleted: true`) changed after that time. 
       "page": 14,
       "pageCount": 38,
       "completed": false,
+      "hidden": false,
       "updatedAt": "..."
     }
   ],
   "serverTime": "..."
 }
 ```
-One row per manga: where the user is now.
+One row per manga: where the user is now. `hidden` means the user removed it from Continue reading; the next read clears it.
 
-`PUT /v1/me/progress` body `{ "items": [ { "mangaId", "chapterId", "page", "pageCount", "completed", "updatedAt" } ] }` → `{ "accepted": 3 }`. Rows older than the stored `updatedAt` are ignored. Each accepted row also writes a history entry and marks chapters as read when `completed` is true.
+`PUT /v1/me/progress` body `{ "items": [ { "mangaId", "chapterId", "page", "pageCount", "completed", "hidden", "updatedAt" } ] }` → `{ "accepted": 3 }`. Rows older than the stored `updatedAt` are ignored. Each accepted row that isn't `hidden` also writes a history entry and marks chapters as read when `completed` is true. `hidden` defaults to `false`.
 
 ### Read chapters
 
@@ -236,6 +244,6 @@ One entry per manga (latest read), newest first.
 
 ### Continue reading and updates
 
-`GET /v1/me/continue` → `{ "items": [ { "manga": MangaSummary, "progress": Progress, "chapter": Chapter } ] }` (up to 20, most recent first, excluding completed series with nothing new).
+`GET /v1/me/continue` → `{ "items": [ { "manga": MangaSummary, "progress": Progress, "chapter": Chapter } ] }` (up to 20, most recent first, excluding hidden rows and completed series with nothing new).
 
 `GET /v1/me/updates` → `{ "items": [ { "manga": MangaSummary, "newChapters": 3 } ] }` favorites with chapters newer than the user's progress, newest update first.

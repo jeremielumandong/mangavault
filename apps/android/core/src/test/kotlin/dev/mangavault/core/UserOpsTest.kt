@@ -61,4 +61,45 @@ class UserOpsTest {
         d = UserOps.cache(d, m.copy(updatedAt = "2026-10-10T00:00:00Z"))
         assertEquals(8, UserOps.localUpdates(d).single().second)
     }
+
+    @Test
+    fun continueReadingCanBeHiddenUntilReadAgain() {
+        var d = UserOps.recordProgress(UserData(), m, ch(112, 112.0), 14, 38, completed = false, now = "2026-10-01T00:00:00Z")
+        d = d.copy(pending = d.pending.copy(progress = emptySet()))
+        d = UserOps.setContinueHidden(d, 1, true, "2026-10-02T00:00:00Z")
+        assertTrue(d.progress[1]!!.hidden)
+        assertEquals(14, d.progress[1]!!.page)
+        assertEquals("2026-10-02T00:00:00Z", d.progress[1]!!.updatedAt)
+        assertEquals(setOf(1L), d.pending.progress)
+        d = UserOps.recordProgress(d, m, ch(112, 112.0), 15, 38, completed = false, now = "2026-10-03T00:00:00Z")
+        assertFalse(d.progress[1]!!.hidden)
+    }
+
+    @Test
+    fun categoriesRenameDeleteAndBulkMove() {
+        val m2 = MangaSummary(2, "Two")
+        var d = UserOps.setFavorite(UserData(), m, "Weekly", "2026-10-01T00:00:00Z")
+        d = UserOps.setFavorite(d, m2, "Reading", "2026-10-01T00:00:00Z")
+        d = d.copy(pending = d.pending.copy(library = emptySet()))
+
+        d = UserOps.renameCategory(d, "Weekly", "Daily", "2026-10-02T00:00:00Z")
+        assertEquals("Daily", d.library[1]!!.category)
+        assertTrue("Daily" in d.categories && "Weekly" !in d.categories)
+        assertEquals(setOf(1L), d.pending.library)
+
+        d = UserOps.setCategory(d, listOf(1L, 2L), "Completed", "2026-10-03T00:00:00Z")
+        assertEquals("Completed", d.library[2]!!.category)
+
+        d = UserOps.deleteCategory(d, "Completed", "2026-10-04T00:00:00Z")
+        assertEquals(null, d.library[1]!!.category)
+        assertTrue(d.isFavorite(1) && d.isFavorite(2))
+        assertFalse("Completed" in d.categories)
+
+        val before = d.favorites
+        d = UserOps.removeFavorites(d, listOf(1L, 2L), "2026-10-05T00:00:00Z")
+        assertTrue(d.favorites.isEmpty())
+        d = UserOps.restoreFavorites(d, before, "2026-10-06T00:00:00Z")
+        assertEquals(2, d.favorites.size)
+        assertEquals("2026-10-01T00:00:00Z", d.library[1]!!.addedAt)
+    }
 }

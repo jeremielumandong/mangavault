@@ -2,6 +2,7 @@ package dev.mangavault.core.api
 
 import dev.mangavault.core.model.AuthResponse
 import dev.mangavault.core.model.BrowseQuery
+import dev.mangavault.core.model.CatalogStats
 import dev.mangavault.core.model.Chapter
 import dev.mangavault.core.model.ChapterPages
 import dev.mangavault.core.model.HistoryItem
@@ -48,6 +49,7 @@ class ApiException(val status: Int, val code: String, message: String) : Excepti
 interface MangavaultApi {
     suspend fun genres(): List<String>
     suspend fun home(): HomeFeed
+    suspend fun stats(): CatalogStats
     suspend fun browse(query: BrowseQuery): MangaPage
     suspend fun search(q: String, query: BrowseQuery): MangaPage
     suspend fun manga(id: Long): MangaDetail
@@ -139,6 +141,7 @@ class HttpMangavaultApi(
 
     override suspend fun genres() = get(url("genres"), Items.serializer(String.serializer())).items
     override suspend fun home() = get(url("home"), HomeFeed.serializer())
+    override suspend fun stats() = get(url("stats"), CatalogStats.serializer())
     override suspend fun browse(query: BrowseQuery) = get(url("manga", queryParams(query)), MangaPage.serializer())
     override suspend fun search(q: String, query: BrowseQuery) =
         get(url("search", listOf("q" to q) + queryParams(query)), MangaPage.serializer())

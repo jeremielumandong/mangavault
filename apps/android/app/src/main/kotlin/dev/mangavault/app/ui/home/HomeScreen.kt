@@ -1,7 +1,8 @@
 package dev.mangavault.app.ui.home
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,13 +27,20 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CloudOff
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.RemoveCircleOutline
 import androidx.compose.material.icons.rounded.WifiOff
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -51,6 +59,8 @@ import dev.mangavault.app.ui.Navigator
 import dev.mangavault.app.ui.components.Badge
 import dev.mangavault.app.ui.components.Banner
 import dev.mangavault.app.ui.components.Cover
+import dev.mangavault.app.ui.components.ListSheet
+import dev.mangavault.app.ui.components.SheetItem
 import dev.mangavault.app.ui.components.IconBtn
 import dev.mangavault.app.ui.components.Logo
 import dev.mangavault.app.ui.components.MangaTile
@@ -77,6 +87,7 @@ import kotlinx.coroutines.launch
 
 data class HomeUi(
     val loading: Boolean = true,
+    val refreshing: Boolean = false,
     val error: Boolean = false,
     val offline: Boolean = false,
     val feed: HomeFeed? = null,
@@ -94,9 +105,25 @@ class HomeViewModel(private val c: AppContainer) : ViewModel() {
     }
 
     fun load() {
+        viewModelScope.launch { fetch() }
+    }
+
+    /** Pull to refresh: reload the rows and sync the library and progress alongside. */
+    fun refresh() {
+        if (_ui.value.refreshing) return
+        _ui.update { it.copy(refreshing = true) }
+        viewModelScope.launch {
+            val sync = async { c.syncNow() }
+            fetch()
+            sync.await()
+            _ui.update { it.copy(refreshing = false) }
+        }
+    }
+
+    private suspend fun fetch() {
         val genre = c.prefs.value.genres.firstOrNull() ?: "Romance"
         _ui.update { it.copy(genre = genre, error = false, loading = it.feed == null) }
-        viewModelScope.launch {
+        kotlinx.coroutines.coroutineScope {
             val genreRow = async {
                 runCatching {
                     c.api.browse(dev.mangavault.core.model.BrowseQuery(sort = "popular", genres = listOf(genre), limit = 20)).items
@@ -132,11 +159,12 @@ class HomeViewModel(private val c: AppContainer) : ViewModel() {
 data class ContinueItem(val manga: MangaSummary, val progress: ProgressEntry)
 
 fun continueItems(d: UserData): List<ContinueItem> =
-    d.progress.values.filter { !it.completed }
+    d.progress.values.filter { !it.completed && !it.hidden }
         .sortedByDescending { d.history[it.mangaId]?.readAt ?: it.updatedAt }
         .mapNotNull { p -> d.manga[p.mangaId]?.let { ContinueItem(it, p) } }
         .take(5)
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(nav: Navigator) {
     val c = LocalContainer.current
@@ -157,75 +185,98 @@ fun HomeScreen(nav: Navigator) {
         add(Triple("More ${ui.genre}", ui.genreRow, { nav.browse("popular", ui.genre) }))
     }.filter { it.second.isNotEmpty() }
     val empty = !ui.loading && !ui.error && cont.isEmpty() && rows.isEmpty() && updates.isEmpty()
+    var actions by remember { mutableStateOf<ContinueItem?>(null) }
 
-    LazyColumn(
-        Modifier.fillMaxSize().statusBarsPadding(),
-        contentPadding = PaddingValues(bottom = LocalBottomPadding.current),
-    ) {
-        if (ui.offline || !online && feed != null) {
-            item { Banner(Icons.Rounded.CloudOff, "You're offline. Downloaded and cached chapters still open.") }
-        }
-        item {
-            Row(
-                Modifier.fillMaxWidth().heightIn(min = 52.dp).padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Logo(24, Modifier.weight(1f))
-                IconBtn(Icons.Rounded.Person, { nav.tab("settings") }, background = Mv.colors.sf, contentDescription = "Account")
+    PullToRefreshBox(ui.refreshing, vm::refresh, Modifier.fillMaxSize().statusBarsPadding()) {
+        LazyColumn(
+            Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = LocalBottomPadding.current),
+        ) {
+            if (ui.offline || !online && feed != null) {
+                item { Banner(Icons.Rounded.CloudOff, "You're offline. Downloaded and cached chapters still open.") }
             }
-        }
-        when {
-            ui.loading -> item { HomeSkeleton() }
-            ui.error -> item {
-                StateMessage(
-                    "Couldn't load Home", "The Mangavault server didn't respond. Check your connection and try again.",
-                    icon = Icons.Rounded.WifiOff, action = "Retry", onAction = vm::load, top = 120.dp,
-                )
+            item {
+                Row(
+                    Modifier.fillMaxWidth().heightIn(min = 52.dp).padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Logo(24, Modifier.weight(1f))
+                    IconBtn(Icons.Rounded.Person, { nav.tab("settings") }, background = Mv.colors.sf, contentDescription = "Account")
+                }
             }
-            empty -> item {
-                StateMessage(
-                    "Nothing to continue yet", "Start a series and it'll wait for you here, one tap from where you left off.",
-                    art = {
-                        Box(
-                            Modifier.width(72.dp).height(108.dp).clip(RoundedCornerShape(8.dp))
-                                .background(Mv.colors.ts.copy(alpha = 0.15f))
-                        )
-                    },
-                    action = "Browse popular titles", onAction = { nav.browse("popular") },
-                )
-            }
-            else -> {
-                if (cont.isNotEmpty()) {
-                    item { SectionHeader("Continue reading", Modifier.padding(top = 0.dp)) }
-                    item {
-                        val state = rememberLazyListState()
-                        LazyRow(
-                            state = state,
-                            flingBehavior = rememberSnapFlingBehavior(state, SnapPosition.Start),
-                            contentPadding = PaddingValues(horizontal = 16.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            items(cont, key = { it.manga.id }) { ci ->
-                                ContinueCard(ci) { nav.reader(ci.manga, ci.progress.chapterId, ci.progress.page.coerceAtLeast(1)) }
+            when {
+                ui.loading -> item { HomeSkeleton() }
+                ui.error -> item {
+                    StateMessage(
+                        "Couldn't load Home", "The Mangavault server didn't respond. Check your connection and try again.",
+                        icon = Icons.Rounded.WifiOff, action = "Retry", onAction = vm::load, top = 120.dp,
+                    )
+                }
+                empty -> item {
+                    StateMessage(
+                        "Nothing to continue yet", "Start a series and it'll wait for you here, one tap from where you left off.",
+                        art = {
+                            Box(
+                                Modifier.width(72.dp).height(108.dp).clip(RoundedCornerShape(8.dp))
+                                    .background(Mv.colors.ts.copy(alpha = 0.15f))
+                            )
+                        },
+                        action = "Browse popular titles", onAction = { nav.browse("popular") },
+                    )
+                }
+                else -> {
+                    if (cont.isNotEmpty()) {
+                        item { SectionHeader("Continue reading", Modifier.padding(top = 0.dp)) }
+                        item {
+                            val state = rememberLazyListState()
+                            LazyRow(
+                                state = state,
+                                flingBehavior = rememberSnapFlingBehavior(state, SnapPosition.Start),
+                                contentPadding = PaddingValues(horizontal = 16.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                items(cont, key = { it.manga.id }) { ci ->
+                                    ContinueCard(ci, { actions = ci }) {
+                                        nav.reader(ci.manga, ci.progress.chapterId, ci.progress.page.coerceAtLeast(1))
+                                    }
+                                }
                             }
                         }
                     }
-                }
-                if (updates.isNotEmpty()) {
-                    item { SectionHeader("Updated favorites", action = "Library", onAction = { nav.tab("library") }) }
-                    item {
-                        TileRow(updates.map { it.first }, nav) { m ->
-                            val n = updates.firstOrNull { it.first.id == m.id }?.second ?: 0
-                            Badge("$n new", Modifier.padding(6.dp))
+                    if (updates.isNotEmpty()) {
+                        item { SectionHeader("Updated favorites", action = "Library", onAction = { nav.tab("library") }) }
+                        item {
+                            TileRow(updates.map { it.first }, nav) { m ->
+                                val n = updates.firstOrNull { it.first.id == m.id }?.second ?: 0
+                                Badge("$n new", Modifier.padding(6.dp))
+                            }
                         }
                     }
-                }
-                rows.forEach { (title, items, seeAll) ->
-                    item(key = title) { SectionHeader(title, action = "See all", onAction = seeAll) }
-                    item(key = "$title-row") { TileRow(items, nav) }
+                    rows.forEach { (title, items, seeAll) ->
+                        item(key = title) { SectionHeader(title, action = "See all", onAction = seeAll) }
+                        item(key = "$title-row") { TileRow(items, nav) }
+                    }
                 }
             }
         }
+    }
+
+    actions?.let { ci ->
+        ListSheet(
+            ci.manga.title, { actions = null },
+            listOf(
+                SheetItem(Icons.Rounded.RemoveCircleOutline, "Remove from Continue reading", {
+                    actions = null
+                    c.user.update { UserOps.setContinueHidden(it, ci.manga.id, true) }
+                    c.requestSync()
+                    c.toasts.show("Removed from Continue reading") {
+                        c.user.update { UserOps.setContinueHidden(it, ci.manga.id, false) }
+                        c.requestSync()
+                    }
+                }, sub = "Your place in the series is kept"),
+                SheetItem(Icons.Rounded.Info, "Series details", { actions = null; nav.details(ci.manga) }),
+            ),
+        )
     }
 }
 
@@ -240,13 +291,15 @@ private fun TileRow(items: List<MangaSummary>, nav: Navigator, badge: (@Composab
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun ContinueCard(ci: ContinueItem, onResume: () -> Unit) {
+private fun ContinueCard(ci: ContinueItem, onMore: () -> Unit, onResume: () -> Unit) {
     val p = ci.progress
     val sub = "${Format.chapter(p.chapterNumber)}" + (p.pageCount?.let { " · page ${p.page} of $it" } ?: " · page ${p.page}")
     val pct = p.pageCount?.takeIf { it > 0 }?.let { p.page.toFloat() / it } ?: 0f
     Row(
-        Modifier.width(300.dp).clip(RoundedCornerShape(12.dp)).background(Mv.colors.sf).clickable(onClick = onResume).padding(10.dp),
+        Modifier.width(300.dp).clip(RoundedCornerShape(12.dp)).background(Mv.colors.sf)
+            .combinedClickable(onClick = onResume, onLongClick = onMore, onLongClickLabel = "More actions").padding(10.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

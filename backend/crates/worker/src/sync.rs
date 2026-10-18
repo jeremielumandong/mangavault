@@ -198,6 +198,9 @@ struct ProgressItem {
     page_count: Option<i64>,
     #[serde(default)]
     completed: bool,
+    /// Hidden from Continue reading; reading again clears it.
+    #[serde(default)]
+    hidden: bool,
     updated_at: Option<String>,
 }
 
@@ -220,6 +223,8 @@ struct ProgressRow {
     page_count: Option<i64>,
     #[serde(deserialize_with = "int_bool")]
     completed: bool,
+    #[serde(deserialize_with = "int_bool")]
+    hidden: bool,
     #[serde(rename(deserialize = "updated_at"))]
     updated_at: String,
 }
@@ -228,7 +233,7 @@ fn int_bool<'de, D: serde::Deserializer<'de>>(d: D) -> Result<bool, D::Error> {
     Ok(f64::deserialize(d)? != 0.0)
 }
 
-const PROGRESS_SELECT: &str = "SELECT p.series_id, p.chapter_id, c.number, p.page, p.page_count, p.completed, p.updated_at \
+const PROGRESS_SELECT: &str = "SELECT p.series_id, p.chapter_id, c.number, p.page, p.page_count, p.completed, p.hidden, p.updated_at \
      FROM progress p LEFT JOIN chapter c ON c.id = p.chapter_id";
 
 async fn progress(app: &App, u: i64, since_q: Option<&str>) -> ApiResult {
@@ -265,17 +270,21 @@ async fn progress_put(app: &App, u: i64, body: ProgressPut) -> ApiResult {
         let changed = app
             .db
             .run(
-                "INSERT INTO progress (user_id, series_id, chapter_id, page, page_count, completed, updated_at) \
-                 VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(user_id, series_id) DO UPDATE SET chapter_id = excluded.chapter_id, \
+                "INSERT INTO progress (user_id, series_id, chapter_id, page, page_count, completed, hidden, updated_at) \
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(user_id, series_id) DO UPDATE SET chapter_id = excluded.chapter_id, \
                  page = excluded.page, page_count = excluded.page_count, completed = excluded.completed, \
-                 updated_at = excluded.updated_at WHERE excluded.updated_at > progress.updated_at",
-                args![u, series_id, item.chapter_id, item.page.max(0), item.page_count, item.completed, &t],
+                 hidden = excluded.hidden, updated_at = excluded.updated_at WHERE excluded.updated_at > progress.updated_at",
+                args![u, series_id, item.chapter_id, item.page.max(0), item.page_count, item.completed, item.hidden, &t],
             )
             .await?;
         if changed == 0 {
             continue;
         }
         accepted += 1;
+        // Hiding a row from Continue reading isn't a read.
+        if item.hidden {
+            continue;
+        }
         let mut stmts = vec![app.db.stmt(
             "INSERT INTO history (user_id, series_id, chapter_id, page, read_at) VALUES (?1, ?2, ?3, ?4, ?5) \
              ON CONFLICT(user_id, series_id) DO UPDATE SET chapter_id = excluded.chapter_id, page = excluded.page, \
@@ -405,12 +414,12 @@ async fn history(app: &App, u: i64, q: &Query) -> ApiResult {
 }
 
 async fn continue_reading(app: &App, u: i64) -> ApiResult {
-    // Skip finished series: completed on their last chapter.
+    // Skip finished series (completed on their last chapter) and hidden rows.
     let rows: Vec<ProgressRow> = app
         .db
         .all(
             &format!(
-                "{PROGRESS_SELECT} WHERE p.user_id = ? AND NOT (p.completed AND NOT EXISTS \
+                "{PROGRESS_SELECT} WHERE p.user_id = ? AND p.hidden = 0 AND NOT (p.completed AND NOT EXISTS \
                  (SELECT 1 FROM chapter n WHERE n.series_id = p.series_id AND n.sort > c.sort)) \
                  ORDER BY p.updated_at DESC LIMIT 20"
             ),

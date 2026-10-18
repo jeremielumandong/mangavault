@@ -138,7 +138,7 @@ class SyncEngine(private val api: MangavaultApi, private val store: JsonFileStat
                 val local = prog[r.mangaId]
                 if (local == null || !isoAfter(local.updatedAt, r.updatedAt)) {
                     val title = local?.takeIf { it.chapterId == r.chapterId }?.chapterTitle
-                    prog[r.mangaId] = ProgressEntry(r.mangaId, r.chapterId, r.chapterNumber, title, r.page, r.pageCount, r.completed, r.updatedAt)
+                    prog[r.mangaId] = ProgressEntry(r.mangaId, r.chapterId, r.chapterNumber, title, r.page, r.pageCount, r.completed, r.updatedAt, r.hidden)
                 }
             }
             val pending = cur.pending.copy(progress = cur.pending.progress.filter { id ->
@@ -153,7 +153,7 @@ class SyncEngine(private val api: MangavaultApi, private val store: JsonFileStat
 private fun dev.mangavault.core.model.LibraryItem.toEntry() =
     LibraryEntry(manga.id, category, addedAt ?: updatedAt, updatedAt, deleted, unreadCount)
 
-private fun ProgressEntry.toItem() = ProgressItem(mangaId, chapterId, chapterNumber, page, pageCount, completed, updatedAt)
+private fun ProgressEntry.toItem() = ProgressItem(mangaId, chapterId, chapterNumber, page, pageCount, completed, updatedAt, hidden)
 
 /** Keep an id pending when the entry changed again while its push was in flight. */
 private fun dev.mangavault.core.store.Pending.takeIfUnchanged(cur: UserData, id: Long, sent: LibraryEntry?) =

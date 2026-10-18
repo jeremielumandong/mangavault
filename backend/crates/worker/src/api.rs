@@ -140,6 +140,7 @@ pub async fn route(app: &App, mut req: Request) -> ApiResult {
         }
         (Get, ["v1", "genres"]) => genres(app).await,
         (Get, ["v1", "home"]) => home(app).await,
+        (Get, ["v1", "stats"]) => stats(app).await,
         (Get, ["v1", "manga"]) => browse(app, &Query::of(&req)?).await,
         (Get, ["v1", "search"]) => search(app, &Query::of(&req)?).await,
         (Get, ["v1", "manga", id]) => manga(app, parse_id(id)?).await,
@@ -230,6 +231,33 @@ async fn home(app: &App) -> ApiResult {
     public_json(
         &json!({ "popular": popular, "latest": latest, "new": new }),
         120,
+    )
+}
+
+/// How big the catalog is, counted like the lists count it.
+async fn stats(app: &App) -> ApiResult {
+    #[derive(serde::Deserialize)]
+    struct S {
+        series: i64,
+        chapters: Option<i64>,
+        latest: Option<String>,
+    }
+    let s: Option<S> = app
+        .db
+        .first(
+            &format!(
+                "SELECT COUNT(*) AS series, SUM(s.chapter_count) AS chapters, MAX(s.updated_at) AS latest \
+                 FROM series s WHERE {LISTABLE}"
+            ),
+            args![],
+        )
+        .await?;
+    let (series, chapters, latest) = s.map_or((0, 0, None), |s| {
+        (s.series, s.chapters.unwrap_or(0), s.latest)
+    });
+    public_json(
+        &json!({ "series": series, "chapters": chapters, "latestUpdateAt": latest }),
+        300,
     )
 }
 

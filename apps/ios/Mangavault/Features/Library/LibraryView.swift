@@ -10,12 +10,31 @@ private struct LibItem: Identifiable {
     var id: Int { manga.id }
 }
 
+private enum LibrarySheet: Identifiable {
+    case sort, newCategory, move, moveToNew
+    case rename(String)
+
+    var id: String {
+        switch self {
+        case .sort: return "sort"
+        case .newCategory: return "newCategory"
+        case .move: return "move"
+        case .moveToNew: return "moveToNew"
+        case .rename(let c): return "rename-\(c)"
+        }
+    }
+}
+
 struct LibraryView: View {
     @Environment(AppModel.self) private var app
     @Environment(\.theme) private var theme
     @State private var category = "All"
-    @State private var showSort = false
-    @State private var showNewCategory = false
+    @State private var sheet: LibrarySheet?
+    @State private var searching = false
+    @State private var query = ""
+    @State private var selecting = false
+    @State private var selected: Set<Int> = []
+    @FocusState private var searchFocused: Bool
 
     private var store: LocalStore { app.store }
     private var settings: AppSettings { store.settings }
@@ -26,25 +45,9 @@ struct LibraryView: View {
                 if app.network.isOffline {
                     OfflineBanner(text: "Offline. Showing your saved library; changes sync when you're back.")
                 }
-                HStack(alignment: .bottom) {
-                    ScreenTitle(title: "Library")
-                    Spacer()
-                    Button {
-                        if !app.isSignedIn { app.askSignIn() } else { Task { await app.sync.sync() } }
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: syncSymbol).font(.system(size: 13))
-                            Text(syncLabel)
-                        }
-                        .mvText(12, .regular, theme.ts)
-                        .padding(.bottom, 6)
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 4)
-                .padding(.bottom, 4)
+                if selecting { selectionBar } else { titleRow }
                 categoryTabs
+                if searching { searchField }
                 controls
                 content
             }
@@ -54,18 +57,60 @@ struct LibraryView: View {
         .background(theme.bg)
         .toolbar(.hidden, for: .navigationBar)
         .refreshable { await app.sync.sync() }
-        .sheet(isPresented: $showSort) { sortSheet }
-        .sheet(isPresented: $showNewCategory) {
-            NewCategorySheet(hint: "Categories sync with your account.") { name in
-                store.addCategory(name)
-                category = name
-                app.showToast("Added “\(name)”")
-            }
-            .environment(app)
+        .sheet(item: $sheet) { s in sheetView(s).environment(app) }
+        .onChange(of: store.favorites.count) {
+            // Titles removed elsewhere drop out of the selection.
+            selected = selected.filter { store.isFavorite($0) }
         }
     }
 
     // MARK: Header bits
+
+    private var titleRow: some View {
+        HStack(alignment: .bottom) {
+            ScreenTitle(title: "Library")
+            Spacer()
+            Button {
+                if !app.isSignedIn { app.askSignIn() } else { Task { await app.sync.sync() } }
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: syncSymbol).font(.system(size: 13))
+                    Text(syncLabel)
+                }
+                .mvText(12, .regular, theme.ts)
+                .padding(.bottom, 6)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 4)
+        .padding(.bottom, 4)
+    }
+
+    private var selectionBar: some View {
+        HStack(spacing: 4) {
+            Button("Done") { endSelection() }
+                .mvText(16, .semibold, theme.ac)
+                .frame(minWidth: 44, minHeight: 44)
+            Text(selected.isEmpty ? "Select titles" : "\(selected.count) selected")
+                .mvText(17, .semibold, theme.tp)
+                .frame(maxWidth: .infinity)
+            Button(allShownSelected ? "None" : "All") {
+                let shown = Set(items.map(\.id))
+                selected = allShownSelected ? selected.subtracting(shown) : selected.union(shown)
+            }
+            .mvText(16, .semibold, theme.ac)
+            .frame(minWidth: 44, minHeight: 44)
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 12)
+        .frame(minHeight: 56)
+    }
+
+    private var allShownSelected: Bool {
+        let shown = Set(items.map(\.id))
+        return !shown.isEmpty && shown.isSubset(of: selected)
+    }
 
     private var syncSymbol: String {
         if app.network.isOffline { return "icloud.slash" }
@@ -110,9 +155,23 @@ struct LibraryView: View {
                         }
                     }
                     .buttonStyle(.plain)
+                    .contextMenu {
+                        if c != "All" {
+                            Button {
+                                sheet = .rename(c)
+                            } label: {
+                                Label("Rename", systemImage: "pencil")
+                            }
+                            Button(role: .destructive) {
+                                deleteCategory(c)
+                            } label: {
+                                Label("Delete category", systemImage: "trash")
+                            }
+                        }
+                    }
                 }
                 Button {
-                    showNewCategory = true
+                    sheet = .newCategory
                 } label: {
                     Image(systemName: "plus").font(.system(size: 17)).foregroundStyle(theme.ts).frame(width: 32, height: 40)
                 }
@@ -130,62 +189,155 @@ struct LibraryView: View {
         c == "All" ? store.favorites.count : store.favorites.filter { $0.category == c }.count
     }
 
-    private var controls: some View {
+    private var searchField: some View {
         HStack(spacing: 8) {
-            Button {
-                showSort = true
-            } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: "line.3.horizontal.decrease").font(.system(size: 14))
-                    Text(settings.libSort.rawValue)
-                }
-                .mvText(13, .medium, theme.tp)
-                .padding(.horizontal, 12)
-                .frame(height: 32)
-                .background(theme.sf, in: Capsule())
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass").font(.system(size: 15)).foregroundStyle(theme.ts)
+                TextField("", text: $query, prompt: Text("Search your library").foregroundColor(theme.ts))
+                    .font(MV.font(15))
+                    .foregroundStyle(theme.tp)
+                    .focused($searchFocused)
+                    .submitLabel(.search)
+                    .autocorrectionDisabled()
             }
+            .padding(.horizontal, 12)
+            .frame(height: 40)
+            .background(theme.sf, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            Button("Cancel") {
+                query = ""
+                searching = false
+            }
+            .mvText(15, .medium, theme.ac)
             .buttonStyle(.plain)
-            if settings.libUnread {
-                Text("Unread").mvText(13, .medium, theme.ac).padding(.horizontal, 12).frame(height: 32)
-                    .background(theme.acs, in: Capsule())
-            }
-            Spacer()
-            if settings.libView == .grid {
-                HStack(spacing: 0) {
-                    ForEach([2, 3, 4], id: \.self) { n in
-                        Button {
-                            store.settings.libCols = n
-                        } label: {
-                            Text("\(n)").mvText(12, .semibold, theme.tp).frame(width: 30, height: 28)
-                                .background(settings.libCols == n ? theme.sr : .clear, in: Capsule())
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(2)
-                .background(theme.sf, in: Capsule())
-            }
-            Button {
-                store.settings.libView = settings.libView == .grid ? .list : .grid
-            } label: {
-                Image(systemName: settings.libView == .grid ? "list.bullet" : "square.grid.2x2")
-                    .font(.system(size: 16)).foregroundStyle(theme.tp)
-                    .frame(width: 44, height: 32)
-                    .background(theme.sf, in: Capsule())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Toggle view")
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 10)
+        .padding(.top, 10)
+        .onAppear { searchFocused = true }
+    }
+
+    @ViewBuilder private var controls: some View {
+        if selecting {
+            HStack(spacing: 8) {
+                pill("folder", "Move") { sheet = .move }
+                pill("heart.slash", "Remove", tint: theme.ac) { removeSelected() }
+                Spacer()
+            }
+            .disabled(selected.isEmpty)
+            .opacity(selected.isEmpty ? 0.5 : 1)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+        } else {
+            HStack(spacing: 8) {
+                pill("line.3.horizontal.decrease", settings.libSort.rawValue) { sheet = .sort }
+                if settings.libUnread {
+                    Text("Unread").mvText(13, .medium, theme.ac).padding(.horizontal, 12).frame(height: 32)
+                        .background(theme.acs, in: Capsule())
+                }
+                Spacer()
+                if !searching {
+                    iconButton("magnifyingglass", "Search library") { searching = true }
+                }
+                iconButton("checkmark.circle", "Select titles") { selecting = true }
+                if settings.libView == .grid {
+                    HStack(spacing: 0) {
+                        ForEach([2, 3, 4], id: \.self) { n in
+                            Button {
+                                store.settings.libCols = n
+                            } label: {
+                                Text("\(n)").mvText(12, .semibold, theme.tp).frame(width: 30, height: 28)
+                                    .background(settings.libCols == n ? theme.sr : .clear, in: Capsule())
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(2)
+                    .background(theme.sf, in: Capsule())
+                }
+                Button {
+                    store.settings.libView = settings.libView == .grid ? .list : .grid
+                } label: {
+                    Image(systemName: settings.libView == .grid ? "list.bullet" : "square.grid.2x2")
+                        .font(.system(size: 16)).foregroundStyle(theme.tp)
+                        .frame(width: 44, height: 32)
+                        .background(theme.sf, in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Toggle view")
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+        }
+    }
+
+    private func pill(_ symbol: String, _ title: String, tint: Color? = nil, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 4) {
+                Image(systemName: symbol).font(.system(size: 14))
+                Text(title)
+            }
+            .mvText(13, .medium, tint ?? theme.tp)
+            .padding(.horizontal, 12)
+            .frame(height: 32)
+            .background(theme.sf, in: Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func iconButton(_ symbol: String, _ label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol).font(.system(size: 16)).foregroundStyle(theme.ts).frame(width: 32, height: 32)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
+    }
+
+    // MARK: Actions
+
+    private func endSelection() {
+        selecting = false
+        selected = []
+    }
+
+    private func toggle(_ id: Int) {
+        if selected.contains(id) { selected.remove(id) } else { selected.insert(id) }
+    }
+
+    private func move(to category: String?) {
+        let ids = Array(selected)
+        store.setCategory(ids, category)
+        endSelection()
+        app.showToast("Moved \(Fmt.plural(ids.count, "title")) to \(category ?? "no category")")
+    }
+
+    private func removeSelected() {
+        let gone = store.removeFavorites(Array(selected))
+        endSelection()
+        guard !gone.isEmpty else { return }
+        let store = self.store
+        app.showToast("Removed \(Fmt.plural(gone.count, "title")) from Library", undo: { store.restoreFavorites(gone) })
+    }
+
+    private func deleteCategory(_ name: String) {
+        let store = self.store
+        let wasCustom = store.customCategories.contains(name)
+        let ids = store.deleteCategory(name)
+        if category == name { category = "All" }
+        app.showToast("Deleted “\(name)”", undo: {
+            store.removedCategories.removeAll { $0 == name }
+            if wasCustom, !store.customCategories.contains(name) { store.customCategories.append(name) }
+            store.setCategory(ids, name)
+            store.save()
+        })
     }
 
     // MARK: Items
 
     private var items: [LibItem] {
         var out: [LibItem] = []
+        let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
         for e in store.favorites where category == "All" || e.category == category {
             let m = store.summaries[e.mangaId] ?? MangaSummary(id: e.mangaId, title: "")
+            if !q.isEmpty, !m.title.localizedCaseInsensitiveContains(q) { continue }
             let p = store.progress[e.mangaId]
             let unread = Reading.unread(latest: m.latestChapter, progress: p)
             let hasNew: Bool = {
@@ -200,6 +352,12 @@ struct LibraryView: View {
             out.sort { (store.history[$0.id]?.readAt ?? "") > (store.history[$1.id]?.readAt ?? "") }
         case .lastUpdated:
             out.sort { ($0.manga.updatedAt ?? "") > ($1.manga.updatedAt ?? "") }
+        case .mostUnread:
+            out.sort {
+                $0.unread != $1.unread
+                    ? $0.unread > $1.unread
+                    : $0.manga.title.localizedCaseInsensitiveCompare($1.manga.title) == .orderedAscending
+            }
         case .title:
             out.sort { $0.manga.title.localizedCaseInsensitiveCompare($1.manga.title) == .orderedAscending }
         case .dateAdded:
@@ -218,6 +376,10 @@ struct LibraryView: View {
                     button: "Retry", action: { Task { await app.sync.sync() } }, top: 90)
             } else if app.isSignedIn, app.sync.status == .syncing, store.favorites.isEmpty {
                 SkeletonGrid()
+            } else if !query.trimmingCharacters(in: .whitespaces).isEmpty {
+                EmptyState(
+                    symbol: "magnifyingglass", title: "No matches",
+                    message: "Nothing in this list matches “\(query.trimmingCharacters(in: .whitespaces))”.", top: 80)
             } else {
                 EmptyState(
                     symbol: "heart", title: store.favorites.isEmpty ? "Your library is empty" : "Nothing here yet",
@@ -228,17 +390,95 @@ struct LibraryView: View {
             let cols = settings.libCols
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12, alignment: .top), count: cols), spacing: 16) {
                 ForEach(list) { item in
-                    Button { app.open(item.manga) } label: { GridCell(item: item, titleSize: cols == 4 ? 11 : cols == 3 ? 13 : 15) }
-                        .buttonStyle(.plain)
+                    Button { tap(item) } label: {
+                        GridCell(item: item, titleSize: cols == 4 ? 11 : cols == 3 ? 13 : 15, selected: selectionState(item))
+                    }
+                    .buttonStyle(.plain)
+                    .contextMenu { itemMenu(item) }
                 }
             }
             .padding(.horizontal, 16)
         } else {
             LazyVStack(spacing: 0) {
                 ForEach(list) { item in
-                    Button { app.open(item.manga) } label: { ListRow(item: item) }
+                    Button { tap(item) } label: { ListRow(item: item, selected: selectionState(item)) }
                         .buttonStyle(.plain)
+                        .contextMenu { itemMenu(item) }
                 }
+            }
+        }
+    }
+
+    private func tap(_ item: LibItem) {
+        if selecting { toggle(item.id) } else { app.open(item.manga) }
+    }
+
+    /// nil when not selecting.
+    private func selectionState(_ item: LibItem) -> Bool? {
+        selecting ? selected.contains(item.id) : nil
+    }
+
+    @ViewBuilder private func itemMenu(_ item: LibItem) -> some View {
+        if !selecting {
+            Button {
+                selecting = true
+                selected = [item.id]
+            } label: {
+                Label("Select", systemImage: "checkmark.circle")
+            }
+            Button {
+                selected = [item.id]
+                sheet = .move
+            } label: {
+                Label("Move to category…", systemImage: "folder")
+            }
+            Button(role: .destructive) {
+                selected = [item.id]
+                removeSelected()
+            } label: {
+                Label("Remove from Library", systemImage: "heart.slash")
+            }
+        }
+    }
+
+    // MARK: Sheets
+
+    @ViewBuilder private func sheetView(_ s: LibrarySheet) -> some View {
+        switch s {
+        case .sort:
+            sortSheet
+        case .newCategory:
+            NewCategorySheet(hint: "Categories sync with your account.") { name in
+                store.addCategory(name)
+                category = name
+                app.showToast("Added “\(name)”")
+            }
+        case .move:
+            let ids = selected
+            let current = Set(ids.map { store.library[$0]?.category })
+            ListSheet(
+                title: "Move to category", sub: Fmt.plural(ids.count, "title"),
+                items: store.categories.map { c in
+                    ListSheetItem(symbol: "folder", label: c, checked: current == [c]) { move(to: c) }
+                } + [
+                    ListSheetItem(symbol: "folder.badge.minus", label: "No category") { move(to: nil) },
+                    ListSheetItem(symbol: "folder.badge.plus", label: "New category…") {
+                        Task {
+                            try? await Task.sleep(for: .milliseconds(350))
+                            sheet = .moveToNew
+                        }
+                    },
+                ])
+        case .moveToNew:
+            NewCategorySheet(hint: "The selected titles move into it.") { name in move(to: name) }
+        case .rename(let old):
+            NewCategorySheet(hint: "Every title in it moves to the new name.", title: "Rename category", initial: old, action: "Save") { name in
+                if name != old, store.categories.contains(name) {
+                    app.showToast("“\(name)” already exists")
+                    return
+                }
+                store.renameCategory(old, to: name)
+                if category == old { category = name }
             }
         }
     }
@@ -258,9 +498,25 @@ struct LibraryView: View {
     }
 }
 
+/// The round check shown on covers while selecting.
+private struct SelectionMark: View {
+    let on: Bool
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        Image(systemName: on ? "checkmark.circle.fill" : "circle")
+            .font(.system(size: 22, weight: .semibold))
+            .symbolRenderingMode(.palette)
+            .foregroundStyle(Color.white, on ? theme.ac : Color.white)
+            .shadow(color: .black.opacity(0.35), radius: 2)
+            .accessibilityLabel(on ? "Selected" : "Not selected")
+    }
+}
+
 private struct GridCell: View {
     let item: LibItem
     let titleSize: CGFloat
+    var selected: Bool?
     @Environment(\.theme) private var theme
 
     var body: some View {
@@ -293,6 +549,14 @@ private struct GridCell: View {
                             }
                             .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: 8, bottomTrailingRadius: 8))
                     }
+                    .overlay {
+                        if selected == true {
+                            RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.black.opacity(0.35))
+                        }
+                    }
+                    .overlay(alignment: .bottomTrailing) {
+                        if let selected { SelectionMark(on: selected).padding(8) }
+                    }
             }
             .aspectRatio(2.0 / 3.0, contentMode: .fit)
             Text(item.manga.title).mvText(titleSize, .semibold, theme.tp).lineLimit(2).multilineTextAlignment(.leading)
@@ -310,10 +574,12 @@ private struct GridCell: View {
 
 private struct ListRow: View {
     let item: LibItem
+    var selected: Bool?
     @Environment(\.theme) private var theme
 
     var body: some View {
         HStack(spacing: 12) {
+            if let selected { SelectionMark(on: selected) }
             CoverImage(manga: item.manga, width: 52, cornerRadius: 6, shade: false)
                 .overlay(alignment: .topTrailing) {
                     if item.hasNew {
@@ -343,6 +609,7 @@ private struct ListRow: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
+        .background(selected == true ? theme.acs : .clear)
         .contentShape(Rectangle())
     }
 

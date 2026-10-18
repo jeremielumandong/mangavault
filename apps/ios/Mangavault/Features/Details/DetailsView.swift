@@ -540,6 +540,9 @@ struct JumpSheet: View {
 
 struct NewCategorySheet: View {
     var hint: String
+    var title = "New category"
+    var initial = ""
+    var action = "Add"
     var onAdd: (String) -> Void
     @State private var name = ""
     @FocusState private var focused: Bool
@@ -550,7 +553,7 @@ struct NewCategorySheet: View {
         let theme = app.theme
         FittedSheet(theme: theme) {
             VStack(alignment: .leading, spacing: 12) {
-                Text("New category").mvText(17, .semibold, theme.tp).padding(.top, 20)
+                Text(title).mvText(17, .semibold, theme.tp).padding(.top, 20)
                 HStack(spacing: 8) {
                     TextField("", text: $name, prompt: Text("e.g. Weekly reads").foregroundColor(theme.ts))
                         .font(MV.font(17))
@@ -562,7 +565,7 @@ struct NewCategorySheet: View {
                         .frame(height: 48)
                         .background(theme.sr, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                     Button(action: add) {
-                        Text("Add").mvText(15, .semibold, .white).padding(.horizontal, 22).frame(height: 48)
+                        Text(action).mvText(15, .semibold, .white).padding(.horizontal, 22).frame(height: 48)
                             .background(theme.ac, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                     }
                     .buttonStyle(.plain)
@@ -572,7 +575,10 @@ struct NewCategorySheet: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 12)
         }
-        .onAppear { focused = true }
+        .onAppear {
+            if name.isEmpty { name = initial }
+            focused = true
+        }
     }
 
     private func add() {
