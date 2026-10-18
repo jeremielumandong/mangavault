@@ -1,18 +1,9 @@
 package dev.mangavault.app.ui.reader
 
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.calculateCentroid
-import androidx.compose.foundation.gestures.calculatePan
-import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -20,15 +11,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.BrokenImage
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Stable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -39,11 +30,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
@@ -73,92 +63,6 @@ data class ReaderPalette(val bg: Color, val fg: Color, val fg2: Color, val card:
             }
         }
     }
-}
-
-/**
- * Pinch, pan and double-tap zoom. Single-finger drags pass through to the list or pager
- * underneath unless the content is zoomed (then a drag pans it).
- */
-@Stable
-class ZoomState {
-    var scale by mutableFloatStateOf(1f)
-    var offset by mutableStateOf(Offset.Zero)
-    var size by mutableStateOf(IntSize.Zero)
-    val zoomed get() = scale > 1.01f
-
-    fun clamp() {
-        val maxX = (size.width * (scale - 1f)) / 2f
-        val maxY = (size.height * (scale - 1f)) / 2f
-        offset = Offset(offset.x.coerceIn(-maxX, maxX), offset.y.coerceIn(-maxY, maxY))
-    }
-
-    fun reset() {
-        scale = 1f
-        offset = Offset.Zero
-    }
-
-    /** Toggles 2.2× around [at] (in layout pixels). */
-    suspend fun toggle(at: Offset) {
-        val anim = Animatable(0f)
-        val fromScale = scale
-        val fromOffset = offset
-        val toScale = if (zoomed) 1f else 2.2f
-        val center = Offset(size.width / 2f, size.height / 2f)
-        val toOffset = if (toScale == 1f) Offset.Zero else (center - at) * (toScale - 1f)
-        anim.animateTo(1f, tween(220)) {
-            scale = fromScale + (toScale - fromScale) * value
-            offset = fromOffset + (toOffset - fromOffset) * value
-            clamp()
-        }
-    }
-}
-
-/**
- * Pinch-zoom gesture. With [panWhenZoomed], a single finger pans once zoomed in and is consumed,
- * so a pager doesn't flip pages while the reader looks around a page.
- */
-fun Modifier.pinchZoom(state: ZoomState, panWhenZoomed: Boolean): Modifier = this
-    .onSizeChanged { state.size = it }
-    .pointerInput(state, panWhenZoomed) {
-        awaitEachGesture {
-            awaitFirstDown(requireUnconsumed = false)
-            do {
-                val event = awaitPointerEvent()
-                val pressed = event.changes.count { it.pressed }
-                if (pressed >= 2) {
-                    val zoom = event.calculateZoom()
-                    val pan = event.calculatePan()
-                    val centroid = event.calculateCentroid()
-                    val newScale = (state.scale * zoom).coerceIn(1f, 5f)
-                    val center = Offset(state.size.width / 2f, state.size.height / 2f)
-                    // Keep the point under the fingers steady while scaling.
-                    val k = newScale / state.scale
-                    state.offset = (state.offset - (centroid - center)) * k + (centroid - center) + pan
-                    state.scale = newScale
-                    state.clamp()
-                    event.changes.forEach { if (it.positionChanged()) it.consume() }
-                } else if (pressed == 1 && state.zoomed) {
-                    val ch = event.changes.first { it.pressed }
-                    val delta = ch.position - ch.previousPosition
-                    if (panWhenZoomed) {
-                        state.offset += delta
-                        state.clamp()
-                        if (ch.positionChanged()) ch.consume()
-                    } else {
-                        // Vertical lists keep scrolling; only follow sideways movement.
-                        state.offset = Offset(state.offset.x + delta.x, state.offset.y)
-                        state.clamp()
-                    }
-                }
-            } while (event.changes.any { it.pressed })
-        }
-    }
-
-fun Modifier.zoomLayer(state: ZoomState): Modifier = this.graphicsLayer {
-    scaleX = state.scale
-    scaleY = state.scale
-    translationX = state.offset.x
-    translationY = state.offset.y
 }
 
 /** One page image with its loading shimmer and retry state. */
@@ -222,7 +126,11 @@ fun PageImage(
     }
 }
 
-/** A paged-mode page: fit modes, pinch and double-tap zoom, tap zones handled by [onTap]. */
+/**
+ * A paged-mode page: fit modes, pinch, pan, fling and double-tap zoom, tap zones handled by [onTap].
+ * Each page keeps its own zoom; [active] is the page on screen, and [onZoomed] tells the pager
+ * when it is zoomed in so swipes pan instead of turning pages.
+ */
 @Composable
 fun PagedPage(
     page: Page,
@@ -231,17 +139,24 @@ fun PagedPage(
     palette: ReaderPalette,
     retryKey: Int,
     fit: String,
-    zoom: ZoomState,
+    active: Boolean,
+    onZoomed: (Boolean) -> Unit,
     onTap: (Offset, IntSize) -> Unit,
     onLongPress: () -> Unit,
 ) {
     var box by remember { mutableStateOf(IntSize.Zero) }
     val tap by rememberUpdatedState(onTap)
     val longPress by rememberUpdatedState(onLongPress)
+    val reportZoom by rememberUpdatedState(onZoomed)
+    val zoom = remember(page.url, fit) { ZoomState() }
+    val zoomed by remember(zoom) { derivedStateOf { zoom.zoomed } }
+    LaunchedEffect(zoom, active) { if (!active) zoom.reset() }
+    LaunchedEffect(zoomed, active) { if (active) reportZoom(zoomed) }
     Box(
         Modifier.fillMaxSize()
+            .clipToBounds()
             .onSizeChanged { box = it }
-            .pinchZoom(zoom, panWhenZoomed = true)
+            .zoomable(zoom, panUnzoomed = true)
             .pointerInput(page.url) {
                 coroutineScope {
                     detectTapGestures(
@@ -253,20 +168,20 @@ fun PagedPage(
             },
         contentAlignment = Alignment.Center,
     ) {
-        Box(Modifier.fillMaxSize().zoomLayer(zoom), contentAlignment = Alignment.Center) {
-            when (fit) {
-                "Height" -> PageImage(page, number, headers, palette, retryKey, Modifier.fillMaxHeight(), ContentScale.FillHeight, 0.68f)
-                "Screen" -> PageImage(page, number, headers, palette, retryKey, Modifier.fillMaxSize(), ContentScale.Fit, sizeToRatio = false)
-                "Original" -> PageImage(page, number, headers, palette, retryKey, Modifier.fillMaxWidth(0.82f).wrapContentSize(), ContentScale.Fit, 0.68f)
-                // Width: tall pages scroll inside the page.
-                else -> BoxWithConstraints(Modifier.fillMaxSize()) {
-                    val minH = maxHeight
-                    Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                        Box(Modifier.fillMaxWidth().heightIn(min = minH), contentAlignment = Alignment.Center) {
-                            PageImage(page, number, headers, palette, retryKey, Modifier.fillMaxWidth(), ContentScale.FillWidth, 0.68f)
-                        }
-                    }
-                }
+        // The page is laid out at its fitted size (taller or wider than the screen is fine), centred,
+        // and the zoom layer scales it around its own centre.
+        val content = Modifier.onSizeChanged { zoom.content = it }.zoomLayer(zoom)
+        when (fit) {
+            "Height" -> Box(Modifier.fillMaxHeight().wrapContentWidth(unbounded = true)) {
+                PageImage(page, number, headers, palette, retryKey, content.fillMaxHeight(), ContentScale.FillHeight, 0.68f)
+            }
+            "Screen" -> PageImage(page, number, headers, palette, retryKey, content, ContentScale.Fit, 0.68f)
+            "Original" -> Box(Modifier.fillMaxWidth().wrapContentHeight(unbounded = true), contentAlignment = Alignment.Center) {
+                PageImage(page, number, headers, palette, retryKey, content.fillMaxWidth(0.82f), ContentScale.Fit, 0.68f)
+            }
+            // Width: a tall page pans up and down at 1×, starting at the top.
+            else -> Box(Modifier.fillMaxWidth().wrapContentHeight(unbounded = true)) {
+                PageImage(page, number, headers, palette, retryKey, content.fillMaxWidth(), ContentScale.FillWidth, 0.68f)
             }
         }
     }
