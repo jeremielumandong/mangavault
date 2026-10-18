@@ -4,7 +4,8 @@
 pub mod asurascans;
 pub mod mangadex;
 pub mod mangapill;
-pub mod weebcentral;
+pub mod mgeko;
+pub mod webtoons;
 
 use crate::{Http, Kind, MangaList, PageImage, Result, SeriesData};
 
@@ -13,15 +14,17 @@ pub enum SourceId {
     MangaDex,
     MangaPill,
     AsuraScans,
-    WeebCentral,
+    MgEko,
+    Webtoons,
 }
 
 impl SourceId {
-    pub const ALL: [SourceId; 4] = [
+    pub const ALL: [SourceId; 5] = [
         SourceId::MangaDex,
         SourceId::MangaPill,
         SourceId::AsuraScans,
-        SourceId::WeebCentral,
+        SourceId::MgEko,
+        SourceId::Webtoons,
     ];
 
     pub fn as_str(self) -> &'static str {
@@ -29,7 +32,8 @@ impl SourceId {
             SourceId::MangaDex => "mangadex",
             SourceId::MangaPill => "mangapill",
             SourceId::AsuraScans => "asurascans",
-            SourceId::WeebCentral => "weebcentral",
+            SourceId::MgEko => "mgeko",
+            SourceId::Webtoons => "webtoons",
         }
     }
 
@@ -42,7 +46,8 @@ impl SourceId {
             SourceId::MangaDex => "MangaDex",
             SourceId::MangaPill => "MangaPill",
             SourceId::AsuraScans => "AsuraScans",
-            SourceId::WeebCentral => "WeebCentral",
+            SourceId::MgEko => "MgEko",
+            SourceId::Webtoons => "Webtoons",
         }
     }
 
@@ -50,21 +55,24 @@ impl SourceId {
     pub fn image_headers(self) -> &'static [(&'static str, &'static str)] {
         match self {
             SourceId::MangaPill => &[("Referer", "https://mangapill.com/")],
-            SourceId::WeebCentral => &[("Referer", "https://weebcentral.com/")],
-            SourceId::MangaDex | SourceId::AsuraScans => &[],
+            // The image CDN (pstatic.net) rejects requests without it.
+            SourceId::Webtoons => &[("Referer", "http://m.webtoons.com/")],
+            SourceId::MangaDex | SourceId::AsuraScans | SourceId::MgEko => &[],
         }
     }
 
     /// Which site should serve a chapter when several have it. Scanlation
     /// sites first for Korean/Chinese series (faster releases, full-width
     /// strips); MangaDex first for Japanese manga (official-quality scans).
-    pub fn preference(kind: Option<Kind>) -> [SourceId; 4] {
+    /// Webtoons comes last: it numbers episodes its own way and locks some
+    /// behind its paywall, so it serves mainly the series only it carries.
+    pub fn preference(kind: Option<Kind>) -> [SourceId; 5] {
         use SourceId::*;
         match kind {
             Some(Kind::Manhwa) | Some(Kind::Manhua) => {
-                [AsuraScans, WeebCentral, MangaDex, MangaPill]
+                [AsuraScans, MgEko, MangaDex, MangaPill, Webtoons]
             }
-            _ => [MangaDex, WeebCentral, MangaPill, AsuraScans],
+            _ => [MangaDex, MangaPill, MgEko, AsuraScans, Webtoons],
         }
     }
 
@@ -73,7 +81,8 @@ impl SourceId {
             SourceId::MangaDex => mangadex::popular(http, page).await,
             SourceId::MangaPill => mangapill::popular(http, page).await,
             SourceId::AsuraScans => asurascans::popular(http, page).await,
-            SourceId::WeebCentral => weebcentral::popular(http, page).await,
+            SourceId::MgEko => mgeko::popular(http, page).await,
+            SourceId::Webtoons => webtoons::popular(http, page).await,
         }
     }
 
@@ -82,7 +91,8 @@ impl SourceId {
             SourceId::MangaDex => mangadex::latest(http, page).await,
             SourceId::MangaPill => mangapill::latest(http, page).await,
             SourceId::AsuraScans => asurascans::latest(http, page).await,
-            SourceId::WeebCentral => weebcentral::latest(http, page).await,
+            SourceId::MgEko => mgeko::latest(http, page).await,
+            SourceId::Webtoons => webtoons::latest(http, page).await,
         }
     }
 
@@ -91,7 +101,8 @@ impl SourceId {
             SourceId::MangaDex => mangadex::search(http, query, page).await,
             SourceId::MangaPill => mangapill::search(http, query, page).await,
             SourceId::AsuraScans => asurascans::search(http, query, page).await,
-            SourceId::WeebCentral => weebcentral::search(http, query, page).await,
+            SourceId::MgEko => mgeko::search(http, query, page).await,
+            SourceId::Webtoons => webtoons::search(http, query, page).await,
         }
     }
 
@@ -101,7 +112,8 @@ impl SourceId {
             SourceId::MangaDex => mangadex::series(http, source_id).await,
             SourceId::MangaPill => mangapill::series(http, source_id).await,
             SourceId::AsuraScans => asurascans::series(http, source_id).await,
-            SourceId::WeebCentral => weebcentral::series(http, source_id).await,
+            SourceId::MgEko => mgeko::series(http, source_id).await,
+            SourceId::Webtoons => webtoons::series(http, source_id).await,
         }
     }
 
@@ -110,7 +122,8 @@ impl SourceId {
             SourceId::MangaDex => mangadex::pages(http, chapter_id).await,
             SourceId::MangaPill => mangapill::pages(http, chapter_id).await,
             SourceId::AsuraScans => asurascans::pages(http, chapter_id).await,
-            SourceId::WeebCentral => weebcentral::pages(http, chapter_id).await,
+            SourceId::MgEko => mgeko::pages(http, chapter_id).await,
+            SourceId::Webtoons => webtoons::pages(http, chapter_id).await,
         }
     }
 }

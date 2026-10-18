@@ -229,12 +229,12 @@ mod tests {
                 vec![ch("a1", Some(1.0)), ch("ax", None)],
             ),
             (
-                SourceId::WeebCentral,
+                SourceId::MgEko,
                 vec![ch("w1", Some(1.0)), ch("wx", None), ch("w2", Some(2.0))],
             ),
         ]);
         let keys: Vec<_> = merged.iter().map(|m| m.key.as_str()).collect();
-        assert_eq!(keys, ["1", "x:weebcentral:wx", "2"]);
+        assert_eq!(keys, ["1", "x:mgeko:wx", "2"]);
     }
 
     #[test]
