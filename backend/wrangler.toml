@@ -19,8 +19,9 @@ migrations_dir = "migrations"
 crons = ["*/15 * * * *", "0 */6 * * *"]
 
 [vars]
-# Comma-separated accepted token audiences: your iOS bundle id (and any
-# Services ID) for Apple; your Android/Web OAuth client ids for Google.
+# Comma-separated accepted token audiences: your iOS bundle id for Apple; your
+# Web and iOS OAuth client ids for Google. Set them as build variables instead
+# (scripts/deploy.sh passes them on); these empty defaults are for local dev.
 APPLE_AUDIENCES = ""
 GOOGLE_AUDIENCES = ""
 # Series refreshed per cron run and popular pages per site per backfill.

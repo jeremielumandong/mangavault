@@ -223,7 +223,7 @@ pub async fn sign_in(app: &App, provider: &str, req: &mut Request) -> ApiResult 
     json(&json!({ "token": token, "user": user }))
 }
 
-fn bearer(req: &Request) -> Option<String> {
+pub(crate) fn bearer(req: &Request) -> Option<String> {
     let h = req.headers().get("Authorization").ok().flatten()?;
     h.strip_prefix("Bearer ")
         .map(|t| t.trim().to_string())

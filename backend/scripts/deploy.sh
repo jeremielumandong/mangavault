@@ -26,4 +26,11 @@ trap 'rm -f "$GENERATED"' EXIT
 sed "s/^database_id = .*/database_id = \"$D1_DATABASE_ID\"/" wrangler.toml > "$GENERATED"
 
 npx wrangler d1 migrations apply mangavault --remote -c "$GENERATED"
-npx wrangler deploy -c "$GENERATED" --domain "$API_DOMAIN"
+# Sign-in audiences can also come from build variables (they would otherwise
+# be reset to the empty [vars] in wrangler.toml on every deploy).
+VARS=()
+for key in APPLE_AUDIENCES GOOGLE_AUDIENCES; do
+  if [[ -n "${!key:-}" ]]; then VARS+=(--var "$key:${!key}"); fi
+done
+
+npx wrangler deploy -c "$GENERATED" --domain "$API_DOMAIN" ${VARS[@]+"${VARS[@]}"}
