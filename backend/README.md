@@ -1,6 +1,6 @@
 # Mangavault backend
 
-A Rust Cloudflare Worker that crawls MangaDex, MangaPill, AsuraScans, MgEko and Webtoons into one D1 database and serves the API in [`docs/api.md`](../docs/api.md). It stores metadata and image links only, never images.
+A Rust Cloudflare Worker that crawls MangaDex, MangaPill, AsuraScans, MgEko, Webtoons, ComicHubFree and Tapas into one D1 database and serves the API in [`docs/api.md`](../docs/api.md). It stores metadata and image links only, never images.
 
 ## Layout
 
