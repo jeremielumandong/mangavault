@@ -1,0 +1,5 @@
+{"result":"ok","data":{"id":"f98660a1-d2e2-461c-960d-7bd13df8b76d","type":"manga","attributes":{
+ "title":{"en":"Kagurabachi"},"altTitles":[{"ja":"カグラバチ"},{"en":"Kagurabachi"}],
+ "description":{"en":"Chihiro seeks revenge."},"status":"ongoing","originalLanguage":"ja",
+ "tags":[{"id":"t1","attributes":{"name":{"en":"Action"},"group":"genre"}},{"id":"t2","attributes":{"name":{"en":"Long Strip"},"group":"format"}}]},
+ "relationships":[{"id":"a1","type":"author","attributes":{"name":"Hokazono Takeru"}},{"id":"a1","type":"artist","attributes":{"name":"Hokazono Takeru"}},{"id":"c1","type":"cover_art","attributes":{"fileName":"cover.png"}}]}}

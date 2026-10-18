@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,300..600,0..1,0&display=block">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
+<style>
+body{margin:0;background:#08080A;-webkit-font-smoothing:antialiased}
+*::-webkit-scrollbar{width:0;height:0}
+button,input{font-family:inherit}
+a{color:#FF5A5F;text-decoration:none}a:hover{color:#FF7A7E}
+@keyframes mvShim{0%{background-position:100% 0}100%{background-position:-100% 0}}
+@keyframes mvUp{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+@keyframes mvFade{from{opacity:0}to{opacity:1}}
+</style>
+</helmet>
+<div style="min-height:100vh; background:#08080A; display:flex; flex-wrap:wrap; gap:40px; justify-content:center; align-items:flex-start; padding:32px 24px; box-sizing:border-box; font-family:-apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;">
+
+  <div style="width:240px; flex:none; display:flex; flex-direction:column; gap:16px; color:#A0A0AB; font-size:13px; line-height:18px; max-height:calc(100vh - 64px); overflow-y:auto; position:sticky; top:32px;">
+    <div style="display:flex; flex-direction:column; gap:2px;">
+      <div style="color:#F2F2F5; font-size:20px; line-height:26px; font-weight:800; letter-spacing:-0.02em;">manga<span style="color:#FF5A5F;">vault</span></div>
+      <div>Phone prototype · every screen is live</div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:6px;">
+      <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#6C6C76;">Platform</div>
+      <div style="display:flex; gap:4px; background:#17171C; border-radius:10px; padding:3px;">
+        <sc-for list="{{ railPlat }}" as="o"><button onClick="{{ o.onClick }}" style="flex:1; height:30px; border:0; border-radius:8px; background:{{ o.bg }}; color:{{ o.fg }}; font-size:13px; font-weight:600; cursor:pointer;">{{ o.label }}</button></sc-for>
+      </div>
+      <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#6C6C76; margin-top:6px;">Theme</div>
+      <div style="display:flex; gap:4px; background:#17171C; border-radius:10px; padding:3px;">
+        <sc-for list="{{ railTheme }}" as="o"><button onClick="{{ o.onClick }}" style="flex:1; height:30px; border:0; border-radius:8px; background:{{ o.bg }}; color:{{ o.fg }}; font-size:13px; font-weight:600; cursor:pointer;">{{ o.label }}</button></sc-for>
+      </div>
+    </div>
+    <sc-for list="{{ rail }}" as="g" hint-placeholder-count="6">
+      <div style="display:flex; flex-direction:column; gap:2px;">
+        <div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#6C6C76; padding:0 10px 4px;">{{ g.label }}</div>
+        <sc-for list="{{ g.items }}" as="i">
+          <button onClick="{{ i.go }}" style="text-align:left; padding:6px 10px; border-radius:8px; border:0; background:{{ i.bg }}; color:{{ i.fg }}; font-size:13px; line-height:18px; cursor:pointer;">{{ i.label }}</button>
+        </sc-for>
+      </div>
+    </sc-for>
+  </div>
+
+  <div ref="{{ rootRef }}" style="--bg:#0E0E11; --sf:#17171C; --sr:#202027; --tp:#F2F2F5; --ts:#A0A0AB; --ac:#FF5A5F; --ok:#3DD68C; --wn:#F5B841; --ln:rgba(255,255,255,0.08); --sk:#1C1C22; --sk2:#2A2A32; --tb:rgba(20,20,25,0.82); --acs:rgba(255,90,95,0.14); --st:54px; --pw:393px; --ph:852px; --prad:55px; --tabh:83px; --hi:34px; --h1s:34px; --h1w:700; position:relative; flex:none; width:var(--pw); height:var(--ph); border-radius:var(--prad); background:var(--bg); color:var(--tp); overflow:hidden; box-shadow:0 0 0 11px #1A1A1E, 0 0 0 12px #2E2E34, 0 40px 90px rgba(0,0,0,0.7); font-family:var(--ff); font-size:15px; line-height:20px; transition:background .2s;">
+
+    <!-- ONBOARDING -->
+    <sc-if value="{{ sOnb1 }}">
+      <div style="position:absolute; inset:0; display:flex; flex-direction:column; padding:calc(var(--st) + 20px) 24px calc(var(--hi) + 20px); box-sizing:border-box; animation:mvFade .25s;">
+        <div style="flex:1; display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:10px; align-content:center;">
+          <sc-for list="{{ onbCovers }}" as="c">
+            <div style="aspect-ratio:2/3; border-radius:8px; background:{{ c.cover }}; transform:translateY({{ c.dy }});"></div>
+          </sc-for>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:10px; padding-top:28px;">
+          <div style="font-size:15px; font-weight:800; letter-spacing:-0.01em;">manga<span style="color:var(--ac);">vault</span></div>
+          <div style="font-size:32px; line-height:38px; font-weight:700; letter-spacing:-0.02em; text-wrap:pretty;">Tap a chapter. Start reading.</div>
+          <div style="font-size:15px; line-height:21px; color:var(--ts); text-wrap:pretty;">Manga, manhwa and webtoons from MangaDex, MangaPill, AsuraScans and WeebCentral in one place. No account needed.</div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px; padding-top:24px;">
+          <button onClick="{{ onbNext }}" style="height:52px; border:0; border-radius:12px; background:var(--ac); color:#fff; font-size:17px; font-weight:600; cursor:pointer;">Get started</button>
+          <button onClick="{{ openSignin }}" style="height:44px; border:0; background:none; color:var(--tp); font-size:15px; font-weight:500; cursor:pointer;">I already have an account</button>
+        </div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ sOnb2 }}">
+      <div style="position:absolute; inset:0; display:flex; flex-direction:column; padding:calc(var(--st) + 12px) 24px calc(var(--hi) + 20px); box-sizing:border-box; animation:mvFade .25s;">
+        <div style="display:flex; justify-content:space-between; align-items:center; height:44px;">
+          <div style="display:flex; gap:6px;"><span style="width:20px; height:4px; border-radius:2px; background:var(--sr);"></span><span style="width:20px; height:4px; border-radius:2px; background:var(--ac);"></span></div>
+          <button onClick="{{ onbDone }}" style="border:0; background:none; color:var(--ts); font-size:15px; font-weight:500; cursor:pointer; height:44px;">Skip</button>
+        </div>
+        <div style="font-size:28px; line-height:34px; font-weight:700; letter-spacing:-0.02em; padding-top:16px;">What do you like to read?</div>
+        <div style="font-size:15px; line-height:21px; color:var(--ts); padding-top:8px;">We'll use this to fill Home. Change it any time.</div>
+        <div style="display:flex; flex-wrap:wrap; gap:8px; padding-top:24px; align-content:flex-start; flex:1;">
+          <sc-for list="{{ onbChips }}" as="c">
+            <button onClick="{{ c.onClick }}" style="height:40px; padding:0 16px; border-radius:20px; border:0; background:{{ c.bg }}; color:{{ c.fg }}; font-size:15px; font-weight:500; cursor:pointer; display:flex; align-items:center; gap:6px;">{{ c.label }}</button>
+          </sc-for>
+        </div>
+        <button onClick="{{ onbDone }}" style="height:52px; border:0; border-radius:12px; background:var(--ac); color:#fff; font-size:17px; font-weight:600; cursor:pointer;">{{ onbCta }}</button>
+      </div>
+    </sc-if>
+
+    <!-- HOME -->
+    <sc-if value="{{ sHome }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute; inset:0; overflow-y:auto; padding-top:var(--st); padding-bottom:calc(var(--tabh) + 24px); box-sizing:border-box;">
+        <sc-if value="{{ offline }}">
+          <div style="margin:4px 16px 0; padding:10px 12px; border-radius:12px; background:rgba(245,184,65,0.14); color:var(--wn); display:flex; gap:10px; align-items:center; font-size:13px; line-height:18px;">
+            <span style="font-family:'Material Symbols Rounded'; font-size:20px; line-height:1;">cloud_off</span>
+            <span style="flex:1; color:var(--tp);">You're offline. Downloaded and cached chapters still open.</span>
+          </div>
+        </sc-if>
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 16px 4px; min-height:52px;">
+          <div style="font-size:26px; line-height:32px; font-weight:800; letter-spacing:-0.03em;">manga<span style="color:var(--ac);">vault</span></div>
+          <button onClick="{{ openAccount }}" aria-label="Account" style="width:44px; height:44px; border-radius:22px; border:0; background:var(--sf); color:var(--tp); display:flex; align-items:center; justify-content:center; cursor:pointer;"><span style="font-family:'Material Symbols Rounded'; font-size:22px; line-height:1;">person</span></button>
+        </div>
+        <div style="display:flex; gap:8px; padding:4px 16px 0;">
+          <button onClick="{{ openSourceSheet }}" style="height:32px; padding:0 10px 0 14px; border-radius:16px; border:0.5px solid var(--ln); background:var(--sf); color:var(--tp); font-size:13px; font-weight:500; display:flex; align-items:center; gap:2px; cursor:pointer; white-space:nowrap; flex:none;">{{ srcFilter }}<span style="font-family:'Material Symbols Rounded'; font-size:18px; line-height:1;">expand_more</span></button>
+        </div>
+
+        <sc-if value="{{ homeLoading }}">
+          <div style="padding:20px 16px 10px;"><div style="width:140px; height:16px; border-radius:6px; background:linear-gradient(100deg, var(--sk) 30%, var(--sk2) 50%, var(--sk) 70%); background-size:200% 100%; animation:mvShim 1.3s linear infinite;"></div></div>
+          <div style="display:flex; gap:12px; padding:0 16px; overflow:hidden;">
+            <sc-for list="{{ sk2 }}" as="x"><div style="flex:none; width:300px; height:110px; border-radius:12px; background:linear-gradient(100deg, var(--sk) 30%, var(--sk2) 50%, var(--sk) 70%); background-size:200% 100%; animation:mvShim 1.3s linear infinite;"></div></sc-for>
+          </div>
+          <sc-for list="{{ sk3 }}" as="x">
+            <div style="padding:24px 16px 10px;"><div style="width:120px; height:16px; border-radius:6px; background:var(--sk);"></div></div>
+            <div style="display:flex; gap:12px; padding:0 16px; overflow:hidden;">
+              <sc-for list="{{ sk4 }}" as="y"><div style="flex:none; width:112px; display:flex; flex-direction:column; gap:8px;"><div style="aspect-ratio:2/3; border-radius:8px; background:linear-gradient(100deg, var(--sk) 30%, var(--sk2) 50%, var(--sk) 70%); background-size:200% 100%; animation:mvShim 1.3s linear infinite;"></div><div style="height:10px; width:90%; border-radius:4px; background:var(--sk);"></div><div style="height:10px; width:60%; border-radius:4px; background:var(--sk);"></div></div></sc-for>
+            </div>
+          </sc-for>
+        </sc-if>
+
+        <sc-if value="{{ homeError }}">
+          <div style="display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px; padding:120px 40px 0;">
+            <span style="font-family:'Material Symbols Rounded'; font-size:44px; line-height:1; color:var(--ts);">wifi_off</span>
+            <div style="font-size:20px; line-height:26px; font-weight:600;">Couldn't load Home</div>
+            <div style="color:var(--ts); text-wrap:pretty;">MangaDex and 2 other sources didn't respond. Check your connection and try again.</div>
+            <button onClick="{{ homeRetry }}" style="margin-top:8px; height:44px; padding:0 24px; border:0; border-radius:12px; background:var(--ac); color:#fff; font-size:15px; font-weight:600; cursor:pointer;">Retry</button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ homeEmpty }}">
+          <div style="display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px; padding:110px 40px 0;">
+            <div style="width:72px; height:108px; border-radius:8px; border:1.5px dashed var(--ts); opacity:.6;"></div>
+            <div style="font-size:20px; line-height:26px; font-weight:600; padding-top:8px;">Nothing to continue yet</div>
+            <div style="color:var(--ts); text-wrap:pretty;">Start a series and it'll wait for you here, one tap from where you left off.</div>
+            <button onClick="{{ browsePopular }}" style="margin-top:8px; height:44px; padding:0 24px; border:0; border-radius:12px; background:var(--ac); color:#fff; font-size:15px; font-weight:600; cursor:pointer;">Browse popular titles</button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ homeContent }}" hint-placeholder-val="{{ true }}">
+          <sc-if value="{{ hasContinue }}" hint-placeholder-val="{{ true }}">
+            <div style="padding:20px 16px 10px; font-size:17px; line-height:22px; font-weight:600;">Continue reading</div>
+            <div style="display:flex; gap:12px; overflow-x:auto; padding:0 16px; scroll-snap-type:x mandatory; scroll-padding:16px;">
+              <sc-for list="{{ contItems }}" as="c" hint-placeholder-count="2">
+                <div onClick="{{ c.resume }}" style="flex:none; width:300px; display:flex; gap:12px; padding:10px; border-radius:12px; background:var(--sf); cursor:pointer; scroll-snap-align:start; box-sizing:border-box;">
+                  <div style="width:60px; height:90px; border-radius:6px; background:{{ c.cover }}; flex:none;"></div>
+                  <div style="flex:1; min-width:0; display:flex; flex-direction:column; justify-content:center; gap:4px;">
+                    <div style="font-size:15px; line-height:20px; font-weight:600; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">{{ c.t }}</div>
+                    <div style="font-size:12px; line-height:16px; color:var(--ts);">{{ c.sub }}</div>
+                    <div style="height:3px; border-radius:2px; background:var(--sr); overflow:hidden; margin-top:4px;"><div style="height:100%; width:{{ c.pct }}; background:var(--ac);"></div></div>
+                  </div>
+                  <div aria-label="Resume" style="align-self:center; width:44px; height:44px; flex:none; border-radius:22px; background:var(--ac); color:#fff; display:flex; align-items:center; justify-content:center;"><span style="font-family:'Material Symbols Rounded'; font-size:26px; line-height:1; font-variation-settings:'FILL' 1;">play_arrow</span></div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ hasUpdated }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex; align-items:baseline; justify-content:space-between; padding:24px 16px 10px;">
+              <div style="font-size:17px; line-height:22px; font-weight:600;">Updated favorites</div>
+              <button onClick="{{ goLibrary }}" style="border:0; background:none; color:var(--ac); font-size:15px; font-weight:500; cursor:pointer; padding:0;">Library</button>
+            </div>
+            <div style="display:flex; gap:12px; overflow-x:auto; padding:0 16px;">
+              <sc-for list="{{ updItems }}" as="m" hint-placeholder-count="4">
+                <div onClick="{{ m.open }}" style="flex:none; width:112px; display:flex; flex-direction:column; gap:6px; cursor:pointer;">
+                  <div style="position:relative; aspect-ratio:2/3; border-radius:8px; overflow:hidden; background:{{ m.cover }};">
+                    <span style="position:absolute; top:6px; left:6px; height:20px; padding:0 7px; border-radius:10px; background:var(--ac); color:#fff; font-size:11px; line-height:20px; font-weight:700;">{{ m.newLabel }}</span>
+                  </div>
+                  <div style="font-size:13px; line-height:17px; font-weight:600; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">{{ m.t }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-for list="{{ discover }}" as="row" hint-placeholder-count="3">
+            <div style="display:flex; align-items:baseline; justify-content:space-between; padding:24px 16px 10px;">
+              <div style="font-size:17px; line-height:22px; font-weight:600;">{{ row.title }}</div>
+              <button onClick="{{ row.seeAll }}" style="border:0; background:none; color:var(--ac); font-size:15px; font-weight:500; cursor:pointer; padding:0;">See all</button>
+            </div>
+            <div style="display:flex; gap:12px; overflow-x:auto; padding:0 16px;">
+              <sc-for list="{{ row.items }}" as="m" hint-placeholder-count="4">
+                <div onClick="{{ m.open }}" style="flex:none; width:112px; display:flex; flex-direction:column; gap:6px; cursor:pointer;">
+                  <div style="position:relative; aspect-ratio:2/3; border-radius:8px; overflow:hidden; background:{{ m.cover }};">
+                    <sc-if value="{{ m.srcDown }}"><span style="position:absolute; bottom:6px; left:6px; width:22px; height:22px; border-radius:11px; background:rgba(0,0,0,0.6); color:var(--wn); display:flex; align-items:center; justify-content:center;"><span style="font-family:'Material Symbols Rounded'; font-size:15px; line-height:1;">warning</span></span></sc-if>
+                  </div>
+                  <div style="font-size:13px; line-height:17px; font-weight:600; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">{{ m.t }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-for>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <!-- SEARCH -->
+    <sc-if value="{{ sSearch }}">
+      <div style="position:absolute; inset:0; overflow-y:auto; padding-top:var(--st); padding-bottom:calc(var(--tabh) + 24px); box-sizing:border-box;">
+        <div style="padding:4px 16px 8px; font-size:var(--h1s); line-height:1.2; font-weight:var(--h1w); letter-spacing:-0.01em;">Search</div>
+        <div style="display:flex; gap:8px; padding:0 16px; position:sticky; top:0; z-index:2; background:var(--bg); padding-bottom:8px;">
+          <div style="flex:1; height:44px; border-radius:12px; background:var(--sf); display:flex; align-items:center; gap:6px; padding:0 8px 0 12px;">
+            <span style="font-family:'Material Symbols Rounded'; font-size:22px; line-height:1; color:var(--ts);">search</span>
+            <input ref="{{ qRef }}" value="{{ q }}" onChange="{{ onQ }}" onKeyDown="{{ onQKey }}" placeholder="Titles, authors, genres" style="flex:1; min-width:0; height:40px; border:0; outline:none; background:none; color:var(--tp); font-size:16px;">
+            <sc-if value="{{ hasQ }}"><button onClick="{{ clearQ }}" aria-label="Clear" style="width:32px; height:32px; border:0; background:none; color:var(--ts); cursor:pointer; display:flex; align-items:center; justify-content:center;"><span style="font-family:'Material Symbols Rounded'; font-size:20px; line-height:1; font-variation-settings:'FILL' 1;">cancel</span></button></sc-if>
+          </div>
+          <button onClick="{{ openFilters }}" aria-label="Filters" style="position:relative; width:44px; height:44px; flex:none; border-radius:12px; border:0; background:var(--sf); color:var(--tp); display:flex; align-items:center; justify-content:center; cursor:pointer;">
+            <span style="font-family:'Material Symbols Rounded'; font-size:22px; line-height:1;">tune</span>
+            <sc-if value="{{ hasFilters }}"><span style="position:absolute; top:6px; right:6px; min-width:16px; height:16px; border-radius:8px; background:var(--ac); color:#fff; font-size:10px; line-height:16px; font-weight:700;">{{ filterCount }}</span></sc-if>
+          </button>
+        </div>
+        <sc-if value="{{ searchIdle }}">
+          <div style="display:flex; justify-content:space-between; align-items:baseline; padding:12px 16px 4px;">
+            <div style="font-size:17px; line-height:22px; font-weight:600;">Recent searches</div>
+            <button onClick="{{ clearRecents }}" style="border:0; background:none; color:var(--ac); font-size:15px; cursor:pointer; padding:0;">Clear</button>
+          </div>
+          <sc-for list="{{ recents }}" as="r">
+            <div style="display:flex; align-items:center; gap:12px; padding:0 8px 0 16px; min-height:48px;">
+              <span style="font-family:'Material Symbols Rounded'; font-size:20px; line-height:1; color:var(--ts);">history</span>
+              <button onClick="{{ r.use }}" style="flex:1; text-align:left; border:0; background:none; color:var(--tp); font-size:15px; height:44px; cursor:pointer; padding:0;">{{ r.label }}</button>
+              <button onClick="{{ r.remove }}" aria-label="Remove" style="width:44px; height:44px; border:0; background:none; color:var(--ts); cursor:pointer;"><span style="font-family:'Material Symbols Rounded'; font-size:18px; line-height:1;">close</span></button>
+            </div>
+          </sc-for>
+          <sc-if value="{{ noRecents }}"><div style="padding:8px 16px; color:var(--ts);">Your searches will show up here.</div></sc-if>
+        </sc-if>
+        <sc-if value="{{ searchLoading }}">
+          <div style="padding:8px 16px 10px; color:var(--ts); font-size:13px;">Searching 4 sources…</div>
+          <div style="display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:16px 12px; padding:0 16px;">
+            <sc-for list="{{ sk9 }}" as="x"><div style="display:flex; flex-direction:column; gap:8px;"><div style="aspect-ratio:2/3; border-radius:8px; background:linear-gradient(100deg, var(--sk) 30%, var(--sk2) 50%, var(--sk) 70%); background-size:200% 100%; animation:mvShim 1.3s linear infinite;"></div><div style="height:10px; width:90%; border-radius:4px; background:var(--sk);"></div><div style="height:8px; width:50%; border-radius:4px; background:var(--sk);"></div></div></sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ searchResults }}">
+          <div style="padding:8px 16px 10px; color:var(--ts); font-size:13px;">{{ resultLabel }}</div>
+          <div style="display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:16px 12px; padding:0 16px;">
+            <sc-for list="{{ results }}" as="m">
+              <div onClick="{{ m.open }}" style="display:flex; flex-direction:column; gap:4px; cursor:pointer; min-width:0; animation:mvFade .2s;">
+                <div style="position:relative; aspect-ratio:2/3; border-radius:8px; overflow:hidden; background:{{ m.cover }};"></div>
+                <div style="font-size:13px; line-height:17px; font-weight:600; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-top:2px;">{{ m.t }}</div>
+                <div style="font-size:11px; line-height:13px; color:var(--ts);">{{ m.src }} · {{ m.type }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <sc-if value="{{ searchNone }}">
+            <div style="display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px; padding:60px 40px 0;">
+              <div style="font-size:17px; font-weight:600;">No matches for “{{ q }}”</div>
+              <div style="color:var(--ts);">Try a shorter title, or loosen your filters.</div>
+              <button onClick="{{ resetFilters }}" style="margin-top:6px; height:44px; padding:0 20px; border:0; border-radius:12px; background:var(--sr); color:var(--tp); font-size:15px; font-weight:600; cursor:pointer;">Clear filters</button>
+            </div>
+          </sc-if>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <!-- DETAILS -->
+    <sc-if value="{{ sDetails }}">
+      <div ref="{{ detRef }}" style="position:absolute; inset:0; overflow-y:auto; padding-bottom:calc(var(--tabh) + 24px); box-sizing:border-box; animation:mvFade .2s;">
+        <div style="padding:calc(var(--st) + 52px) 16px 16px; background:{{ d.headerBg }}; display:flex; flex-direction:column; gap:12px;">
+          <div style="display:flex; gap:16px; align-items:flex-end;">
+            <div style="position:relative; width:120px; height:180px; flex:none; border-radius:8px; background:{{ d.cover }}; box-shadow:0 12px 30px rgba(0,0,0,0.35);">
+              <span style="position:absolute; left:8px; bottom:8px; font:500 9px/1 ui-monospace, Menlo, monospace; letter-spacing:0.08em; color:rgba(255,255,255,0.6);">COVER ART</span>
+            </div>
+            <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:6px;">
+              <div style="font-size:22px; line-height:28px; font-weight:600; text-wrap:pretty; hyphens:none;">{{ d.t }}</div>
+              <div style="font-size:13px; line-height:18px; color:var(--ts);">{{ d.au }}</div>
+              <div style="font-size:13px; line-height:18px; color:var(--ts);">{{ d.meta }}</div>
+            </div>
+          </div>
+          <button onClick="{{ toggleAlt }}" style="align-self:flex-start; border:0; background:none; color:var(--ts); font-size:13px; padding:0; display:flex; align-items:center; gap:2px; cursor:pointer; min-height:24px;">Also known as<span style="font-family:'Material Symbols Rounded'; font-size:18px; line-height:1;">{{ d.altIcon }}</span></button>
+          <sc-if value="{{ altOpen }}"><div style="font-size:13px; line-height:18px; color:var(--tp); margin-top:-6px;">{{ d.alt }}</div></sc-if>
+          <div style="display:flex; flex-wrap:wrap; gap:6px;">
+            <sc-for list="{{ d.genres }}" as="g"><span style="height:28px; padding:0 12px; border-radius:14px; background:var(--sr); font-size:12px; line-height:28px; font-weight:500;">{{ g }}</span></sc-for>
+          </div>
+        </div>
+        <sc-if value="{{ d.srcDown }}">
+          <div style="margin:0 16px 12px; padding:12px; border-radius:12px; background:rgba(245,184,65,0.12); display:flex; gap:10px; align-items:flex-start;">
+            <span style="font-family:'Material Symbols Rounded'; font-size:20px; line-height:1; color:var(--wn);">warning</span>
+            <div style="flex:1; display:flex; flex-direction:column; gap:8px;">
+              <div style="font-size:13px; line-height:18px;">{{ d.srcName }} isn't responding right now. Your progress is safe.</div>
+              <button onClick="{{ d.tryOther }}" style="align-self:flex-start; height:32px; padding:0 12px; border-radius:8px; border:0; background:var(--wn); color:#1A1400; font-size:13px; font-weight:600; cursor:pointer;">Try {{ d.otherSrc }}</button>
+            </div>
+          </div>
+        </sc-if>
+        <div style="padding:0 16px; display:flex; flex-direction:column; gap:12px;">
+          <button onClick="{{ d.primary }}" style="height:52px; border:0; border-radius:12px; background:{{ d.btnBg }}; color:#fff; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0;">
+            <span style="font-size:17px; line-height:22px; font-weight:600;">{{ d.primaryLabel }}</span>
+            <span style="font-size:12px; line-height:15px; opacity:0.85;">{{ d.primarySub }}</span>
+          </button>
+          <div style="display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:8px;">
+            <button onClick="{{ d.toggleFav }}" style="height:56px; border:0; border-radius:12px; background:var(--sf); color:{{ d.favColor }}; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; cursor:pointer; font-size:12px; font-weight:500;"><span style="font-family:'Material Symbols Rounded'; font-size:22px; line-height:1; font-variation-settings:{{ d.favFill }};">favorite</span>{{ d.favLabel }}</button>
+            <button onClick="{{ shareToast }}" style="height:56px; border:0; border-radius:12px; background:var(--sf); color:var(--tp); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; cursor:pointer; font-size:12px; font-weight:500;"><span style="font-family:'Material Symbols Rounded'; font-size:22px; line-height:1;">{{ shareIcon }}</span>Share</button>
+            <button onClick="{{ d.openWeb }}" style="height:56px; border:0; border-radius:12px; background:var(--sf); color:var(--tp); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; cursor:pointer; font-size:12px; font-weight:500;"><span style="font-family:'Material Symbols Rounded'; font-size:22px; line-height:1;">open_in_new</span>{{ d.srcName }}</button>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:4px; padding-top:4px;">
+            <div style="font-size:15px; line-height:21px; color:var(--tp); display:-webkit-box; -webkit-line-clamp:{{ d.clamp }}; -webkit-box-orient:vertical; overflow:hidden; text-wrap:pretty;">{{ d.syn }}</div>
+            <button onClick="{{ toggleSyn }}" style="align-self:flex-start; border:0; background:none; color:var(--ac); font-size:15px; font-weight:500; padding:0; cursor:pointer; min-height:28px;">{{ d.synBtn }}</button>
+          </div>
+          <sc-if value="{{ d.hasAlso }}">
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <div style="font-size:13px; color:var(--ts);">Source</div>
+              <div style="display:flex; gap:4px; background:var(--sf); border-radius:12px; padding:4px;">
+                <sc-for list="{{ d.sources }}" as="o"><button onClick="{{ o.onClick }}" style="flex:1; min-width:0; height:44px; border:0; border-radius:9px; background:{{ o.bg }}; color:var(--tp); cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:13px; line-height:16px; font-weight:600;">{{ o.label }}<span style="font-size:11px; line-height:13px; font-weight:400; color:var(--ts);">{{ o.sub }}</span></button></sc-for>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+        <div style="display:flex; align-items:center; gap:4px; padding:24px 8px 6px 16px;">
+          <div style="flex:1; font-size:17px; line-height:22px; font-weight:600;">{{ d.chCount }}</div>
+          <button onClick="{{ openJump }}" style="height:36px; padding:0 12px; border-radius:18px; border:0; background:var(--sf); color:var(--tp); font-size:13px; font-weight:500; display:flex; align-items:center; gap:4px; cursor:pointer;"><span style="font-family:'Material Symbols Rounded'; font-size:18px; line-height:1;">pin</span>Jump</button>
+          <button onClick="{{ toggleChSort }}" aria-label="Sort chapters" style="height:36px; padding:0 12px; border-radius:18px; border:0; background:var(--sf); color:var(--tp); font-size:13px; font-weight:500; display:flex; align-items:center; gap:4px; cursor:pointer;"><span style="font-family:'Material Symbols Rounded'; font-size:18px; line-height:1;">swap_vert</span>{{ d.sortLabel }}</button>
+        </div>
+        <div style="padding:0 16px 8px; font-size:12px; color:var(--ts);">Long-press a chapter to mark it read.</div>
+        <sc-for list="{{ d.chapters }}" as="c" hint-placeholder-count="8">
+          <div data-ch="{{ c.n }}" onClick="{{ c.open }}" onPointerDown="{{ c.down }}" onPointerUp="{{ c.up }}" onPointerLeave="{{ c.up }}" onPointerCancel="{{ c.up }}" onContextMenu="{{ c.ctx }}" style="display:flex; align-items:center; gap:12px; padding:10px 16px; min-height:64px; box-sizing:border-box; background:{{ c.bg }}; cursor:pointer; border-top:0.5px solid var(--ln); user-select:none; -webkit-user-select:none; transition:background .3s;">
+            <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; opacity:{{ c.op }};">
+              <div style="display:flex; gap:8px; align-items:center;"><span style="font-size:15px; line-height:20px; font-weight:600;">{{ c.label }}</span><sc-if value="{{ c.isNew }}"><span style="height:16px; padding:0 5px; border-radius:4px; background:var(--ac); color:#fff; font-size:10px; line-height:16px; font-weight:700; letter-spacing:0.04em;">NEW</span></sc-if></div>
+              <div style="font-size:13px; line-height:18px; color:var(--ts); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ c.sub }}</div>
+              <sc-if value="{{ c.current }}">
+                <div style="display:flex; align-items:center; gap:8px; padding-top:4px;"><div style="flex:1; height:3px; border-radius:2px; background:var(--sr); overflow:hidden;"><div style="height:100%; width:{{ c.pct }}; background:var(--ac);"></div></div><span style="font-size:12px; color:var(--ac); font-weight:600;">{{ c.pageLabel }}</span></div>
+              </sc-if>
+            </div>
+            <span style="font-family:'Material Symbols Rounded'; font-size:20px; line-height:1; color:{{ c.iconColor }}; font-variation-settings:'FILL' 1;">{{ c.icon }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <button onClick="{{ closeDetails }}" aria-label="Back" style="position:absolute; top:calc(var(--st) + 4px); left:8px; z-index:5; width:44px; height:44px; border-radius:22px; border:0; background:rgba(0,0,0,0.35); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer;"><span style="font-family:'Material Symbols Rounded'; font-size:26px; line-height:1;">{{ backIcon }}</span></button>
+    </sc-if>
+
+    <!-- LIBRARY -->
+    <sc-if value="{{ sLib }}">
+      <div style="position:absolute; inset:0; overflow-y:auto; padding-top:var(--st); padding-bottom:calc(var(--tabh) + 24px); box-sizing:border-box;">
+        <sc-if value="{{ libOffline }}">
+          <div style="margin:4px 16px 0; padding:10px 12px; border-radius:12px; background:rgba(245,184,65,0.14); display:flex; gap:10px; align-items:center; font-size:13px; line-height:18px;">
+            <span style="font-family:'Material Symbols Rounded'; font-size:20px; line-height:1; color:var(--wn);">cloud_off</span>
+            <span style="flex:1;">Offline. Showing your saved library; changes sync when you're back.</span>
+          </div>
+        </sc-if>
+        <div style="display:flex; align-items:flex-end; justify-content:space-between; padding:4px 16px 4px;">
+          <div style="font-size:var(--h1s); line-height:1.2; font-weight:var(--h1w); letter-spacing:-0.01em;">Library</div>
+          <button onClick="{{ syncTap }}" style="border:0; background:none; color:var(--ts); font-size:12px; display:flex; align-items:center; gap:4px; padding:0 0 6px; cursor:pointer;"><span style="font-family:'Material Symbols Rounded'; font-size:16px; line-height:1;">{{ syncIcon }}</span>{{ syncLabel }}</button>
+        </div>
+        <div style="display:flex; gap:20px; padding:4px 16px 0; overflow-x:auto; border-bottom:0.5px solid var(--ln);">
+          <sc-for list="{{ libCats }}" as="c">
+            <button onClick="{{ c.onClick }}" style="flex:none; height:40px; border:0; background:none; color:{{ c.fg }}; font-size:15px; font-weight:600; cursor:pointer; padding:0; border-bottom:2px solid {{ c.line }}; display:flex; align-items:center; gap:6px;">{{ c.label }}<span style="font-size:12px; font-weight:500; color:var(--ts);">{{ c.count }}</span></button>
+          </sc-for>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; padding:10px 16px;">
+          <button onClick="{{ openLibSort }}" style="height:32px; padding:0 12px; border-radius:16px; border:0; background:var(--sf); color:var(--tp); font-size:13px; font-weight:500; display:flex; align-items:center; gap:4px; cursor:pointer;"><span style="font-family:'Material Symbols Rounded'; font-size:18px; line-height:1;">sort</span>{{ libSort }}</button>
+          <sc-if value="{{ libUnread }}"><span style="height:32px; padding:0 12px; border-radius:16px; background:var(--acs); color:var(--ac); font-size:13px; line-height:32px; font-weight:500;">Unread</span></sc-if>
+          <div style="flex:1;"></div>
+          <sc-if value="{{ libIsGrid }}">
+            <div style="display:flex; background:var(--sf); border-radius:16px; padding:2px;">
+              <sc-for list="{{ colOpts }}" as="o"><button onClick="{{ o.onClick }}" style="width:30px; height:28px; border:0; border-radius:14px; background:{{ o.bg }}; color:var(--tp); font-size:12px; font-weight:600; cursor:pointer;">{{ o.label }}</button></sc-for>
+            </div>
+          </sc-if>
+          <button onClick="{{ toggleLibView }}" aria-label="Toggle view" style="width:44px; height:32px; border-radius:16px; border:0; background:var(--sf); color:var(--tp); display:flex; align-items:center; justify-content:center; cursor:pointer;"><span style="font-family:'Material Symbols Rounded'; font-size:20px; line-height:1;">{{ libViewIcon }}</span></button>
+        </div>
+        <sc-if value="{{ libLoading }}">
+          <div style="display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:16px 12px; padding:0 16px;">
+            <sc-for list="{{ sk9 }}" as="x"><div style="display:flex; flex-direction:column; gap:8px;"><div style="aspect-ratio:2/3; border-radius:8px; background:linear-gradient(100deg, var(--sk) 30%, var(--sk2) 50%, var(--sk) 70%); background-size:200% 100%; animation:mvShim 1.3s linear infinite;"></div><div style="height:10px; width:85%; border-radius:4px; background:var(--sk);"></div></div></sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ libError }}">
+          <div style="display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px; padding:90px 40px 0;">
+            <span style="font-family:'Material Symbols Rounded'; font-size:44px; line-height:1; color:var(--ts);">sync_problem</span>
+            <div style="font-size:20px; line-height:26px; font-weight:600;">Couldn't sync your library</div>
+            <div style="color:var(--ts); text-wrap:pretty;">The Mangavault server didn't answer. Your favorites on this phone are untouched.</div>
+            <button onClick="{{ libRetry }}" style="margin-top:8px; height:44px; padding:0 24px; border:0; border-radius:12px; background:var(--ac); color:#fff; font-size:15px; font-weight:600; cursor:pointer;">Retry</button>
+          </div>
+        </sc-if>
+        <sc-if value="{{ libEmpty }}">
+          <div style="display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px; padding:80px 40px 0;">
+            <span style="font-family:'Material Symbols Rounded'; font-size:44px; line-height:1; color:var(--ts);">favorite</span>
+            <div style="font-size:20px; line-height:26px; font-weight:600;">{{ libEmptyTitle }}</div>
+            <div style="color:var(--ts); text-wrap:pretty;">Tap the heart on any title and it lands here with new-chapter badges.</div>
+            <button onClick="{{ browsePopular }}" style="margin-top:8px; height:44px; padding:0 24px; border:0; border-radius:12px; background:var(--ac); color:#fff; font-size:15px; font-weight:600; cursor:pointer;">Browse popular titles</button>
+          </div>
+        </sc-if>
+        <sc-if value="{{ libShowGrid }}">
+          <div style="display:grid; grid-template-columns:{{ libGrid }}; gap:16px 12px; padding:0 16px;">
+            <sc-for list="{{ libItems }}" as="m">
+              <div onClick="{{ m.open }}" style="display:flex; flex-direction:column; gap:6px; cursor:pointer; min-width:0;">
+                <div style="position:relative; aspect-ratio:2/3; border-radius:8px; overflow:hidden; background:{{ m.cover }};">
+                  <sc-if value="{{ m.hasUnread }}"><span aria-label="{{ m.unreadAria }}" style="position:absolute; top:6px; left:6px; min-width:20px; height:20px; padding:0 6px; box-sizing:border-box; border-radius:10px; background:rgba(0,0,0,0.65); color:#fff; font-size:11px; line-height:20px; font-weight:700; text-align:center;">{{ m.unread }}</span></sc-if>
+                  <sc-if value="{{ m.hasNew }}"><span aria-label="New chapters" style="position:absolute; top:7px; right:7px; width:10px; height:10px; border-radius:5px; background:var(--ac); box-shadow:0 0 0 2px rgba(0,0,0,0.45);"></span></sc-if>
+                  <sc-if value="{{ m.srcDown }}"><span style="position:absolute; bottom:9px; left:6px; width:22px; height:22px; border-radius:11px; background:rgba(0,0,0,0.6); color:var(--wn); display:flex; align-items:center; justify-content:center;"><span style="font-family:'Material Symbols Rounded'; font-size:15px; line-height:1;">warning</span></span></sc-if>
+                  <div style="position:absolute; left:0; right:0; bottom:0; height:3px; background:rgba(0,0,0,0.45);"><div style="height:100%; width:{{ m.progW }}; background:var(--ac);"></div></div>
+                </div>
+                <div style="font-size:{{ libTitleSize }}; line-height:1.3; font-weight:600; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">{{ m.t }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ libShowList }}">
+          <sc-for list="{{ libItems }}" as="m">
+            <div onClick="{{ m.open }}" style="display:flex; gap:12px; align-items:center; padding:8px 16px; cursor:pointer;">
+              <div style="position:relative; width:52px; height:78px; flex:none; border-radius:6px; background:{{ m.cover }};"><sc-if value="{{ m.hasNew }}"><span style="position:absolute; top:-3px; right:-3px; width:10px; height:10px; border-radius:5px; background:var(--ac); box-shadow:0 0 0 2px var(--bg);"></span></sc-if></div>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;">
+                <div style="font-size:15px; line-height:20px; font-weight:600; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">{{ m.t }}</div>
+                <div style="font-size:12px; line-height:16px; color:var(--ts);">{{ m.listSub }}</div>
+                <div style="height:3px; border-radius:2px; background:var(--sr); overflow:hidden; margin-top:3px;"><div style="height:100%; width:{{ m.progW }}; background:var(--ac);"></div></div>
+              </div>
+              <sc-if value="{{ m.hasUnread }}"><span style="min-width:24px; height:24px; padding:0 7px; box-sizing:border-box; border-radius:12px; background:var(--acs); color:var(--ac); font-size:11px; line-height:24px; font-weight:700; text-align:center;">{{ m.unread }}</span></sc-if>
+            </div>
+          </sc-for>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <!-- HISTORY -->
+    <sc-if value="{{ sHist }}">
+      <div style="position:absolute; inset:0; overflow-y:auto; overflow-x:hidden; padding-top:var(--st); padding-bottom:calc(var(--tabh) + 24px); box-sizing:border-box;">
+        <div style="display:flex; align-items:flex-end; justify-content:space-between; padding:4px 8px 4px 16px;">
+          <div style="font-size:var(--h1s); line-height:1.2; font-weight:var(--h1w); letter-spacing:-0.01em;">History</div>
+          <button onClick="{{ openClearHist }}" aria-label="More" style="width:44px; height:44px; border:0; background:none; color:var(--tp); cursor:pointer;"><span style="font-family:'Material Symbols Rounded'; font-size:24px; line-height:1;">{{ moreIcon }}</span></button>
+        </div>
+        <sc-if value="{{ histEmpty }}">
+          <div style="display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px; padding:110px 40px 0;">
+            <span style="font-family:'Material Symbols Rounded'; font-size:44px; line-height:1; color:var(--ts);">history</span>
+            <div style="font-size:20px; line-height:26px; font-weight:600;">No reading history</div>
+            <div style="color:var(--ts);">Chapters you open will appear here.</div>
+            <button onClick="{{ browsePopular }}" style="margin-top:8px; height:44px; padding:0 24px; border:0; border-radius:12px; background:var(--ac); color:#fff; font-size:15px; font-weight:600; cursor:pointer;">Browse popular titles</button>
+          </div>
+        </sc-if>
+        <sc-for list="{{ histGroups }}" as="g">
+          <div style="padding:18px 16px 6px; font-size:13px; font-weight:600; color:var(--ts);">{{ g.label }}</div>
+          <sc-for list="{{ g.rows }}" as="h">
+            <div style="position:relative; background:var(--ac);">
+              <div style="position:absolute; right:20px; top:0; bottom:0; display:flex; align-items:center; color:#fff; font-size:13px; font-weight:600; gap:4px;"><span style="font-family:'Material Symbols Rounded'; font-size:20px; line-height:1;">delete</span>Remove</div>
+              <div onPointerDown="{{ h.down }}" onPointerMove="{{ h.move }}" onPointerUp="{{ h.up }}" onPointerCancel="{{ h.up }}" style="position:relative; display:flex; gap:12px; align-items:center; padding:8px 12px 8px 16px; background:var(--bg); transform:{{ h.tx }}; transition:{{ h.tr }}; touch-action:pan-y; user-select:none; -webkit-user-select:none;">
+                <div onClick="{{ h.open }}" style="width:44px; height:66px; flex:none; border-radius:6px; background:{{ h.cover }}; cursor:pointer;"></div>
+                <div onClick="{{ h.open }}" style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; cursor:pointer;">
+                  <div style="font-size:15px; line-height:20px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ h.t }}</div>
+                  <div style="font-size:13px; line-height:18px; color:var(--ts);">{{ h.sub }}</div>
+                  <div style="font-size:12px; line-height:16px; color:var(--ts);">{{ h.time }}</div>
+                </div>
+                <button onClick="{{ h.resume }}" style="height:36px; padding:0 14px; border-radius:18px; border:0; background:var(--sr); color:var(--tp); font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:2px;"><span style="font-family:'Material Symbols Rounded'; font-size:18px; line-height:1; font-variation-settings:'FILL' 1;">play_arrow</span>Resume</button>
+              </div>
+            </div>
+          </sc-for>
+        </sc-for>
+        <sc-if value="{{ histHasRows }}"><div style="padding:16px; font-size:12px; color:var(--ts); text-align:center;">Swipe a row left to remove it.</div></sc-if>
+      </div>
+    </sc-if>
+
+    <!-- SETTINGS -->
+    <sc-if value="{{ sSet }}">
+      <div style="position:absolute; inset:0; overflow-y:auto; padding-top:var(--st); padding-bottom:calc(var(--tabh) + 24px); box-sizing:border-box;">
+        <div style="padding:4px 16px 12px; font-size:var(--h1s); line-height:1.2; font-weight:var(--h1w); letter-spacing:-0.01em;">Settings</div>
+        <div style="margin:0 16px; padding:14px; border-radius:12px; background:var(--sf); display:flex; gap:12px; align-items:center;">
+          <div style="width:48px; height:48px; border-radius:24px; background:{{ avatarBg }}; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:700; color:#fff; flex:none;">{{ avatarText }}</div>
+          <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+            <div style="font-size:15px; font-weight:600;">{{ accTitle }}</div>
+            <div style="font-size:12px; line-height:16px; color:var(--ts);">{{ accSub }}</div>
+          </div>
+          <button onClick="{{ accAction }}" style="height:36px; padding:0 14px; border-radius:18px; border:0; background:{{ accBtnBg }}; color:{{ accBtnFg }}; font-size:13px; font-weight:600; cursor:pointer;">{{ accBtn }}</button>
+        </div>
+        <div style="padding:20px 16px 6px; font-size:13px; color:var(--ts);">Appearance</div>
+        <div style="margin:0 16px; display:flex; gap:4px; background:var(--sf); border-radius:12px; padding:4px;">
+          <sc-for list="{{ themeOpts }}" as="o"><button onClick="{{ o.onClick }}" style="flex:1; height:40px; border:0; border-radius:9px; background:{{ o.bg }}; color:var(--tp); font-size:13px; font-weight:600; cursor:pointer;">{{ o.label }}</button></sc-for>
+        </div>
+        <sc-for list="{{ setSections }}" as="sec">
+          <div style="padding:20px 16px 6px; font-size:13px; color:var(--ts);">{{ sec.title }}</div>
+          <div style="margin:0 16px; border-radius:12px; background:var(--sf); overflow:hidden;">
+            <sc-for list="{{ sec.rows }}" as="row">
+              <div onClick="{{ row.onClick }}" style="display:flex; align-items:center; gap:12px; min-height:48px; padding:0 14px; border-top:{{ row.border }}; cursor:pointer;">
+                <span style="font-family:'Material Symbols Rounded'; font-size:20px; line-height:1; color:var(--ts);">{{ row.icon }}</span>
+                <span style="flex:1; font-size:15px; color:{{ row.color }};">{{ row.label }}</span>
+                <span style="font-size:15px; color:{{ row.valueColor }};">{{ row.value }}</span>
+                <sc-if value="{{ row.isToggle }}"><span style="position:relative; width:46px; height:28px; flex:none; border-radius:14px; background:{{ row.track }}; transition:background .2s;"><span style="position:absolute; top:3px; left:{{ row.knob }}; width:22px; height:22px; border-radius:11px; background:#fff; transition:left .2s; box-shadow:0 1px 3px rgba(0,0,0,0.3);"></span></span></sc-if>
+                <sc-if value="{{ row.chev }}"><span style="font-family:'Material Symbols Rounded'; font-size:20px; line-height:1; color:var(--ts);">chevron_right</span></sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </sc-for>
+        <div style="padding:20px 16px; font-size:12px; color:var(--ts); text-align:center;">Mangavault 1.0 (214) · Content belongs to its sources</div>
+      </div>
+    </sc-if>
+
+    <!-- READER -->
+    <sc-if value="{{ sReader }}">
+      <div style="position:absolute; inset:0; z-index:50; background:{{ rBgColor }}; overflow:hidden; transition:background .2s;">
+        <sc-if value="{{ rVertical }}">
+          <div ref="{{ vRef }}" onScroll="{{ onVScroll }}" onClick="{{ onRClick }}" onPointerDown="{{ onRDown }}" onPointerMove="{{ onRMove }}" onPointerUp="{{ onRUp }}" onContextMenu="{{ onRCtx }}" style="position:absolute; inset:0; overflow-y:auto; overscroll-behavior:contain; user-select:none; -webkit-user-select:none;">
+            <sc-for list="{{ vItems }}" as="it">
+              <sc-if value="{{ it.isPage }}">
+                <div aria-label="{{ it.aria }}" style="position:relative; height:{{ it.hpx }}; margin-bottom:{{ vGap }};">
+                  <sc-if value="{{ it.ok }}"><div style="position:absolute; inset:0; background:{{ it.bg }};"><span style="position:absolute; left:12px; top:12px; font:500 10px/1 ui-monospace, Menlo, monospace; letter-spacing:0.06em; color:rgba(255,255,255,0.5);">{{ it.label }}</span></div></sc-if>
+                  <sc-if value="{{ it.loading }}"><div style="position:absolute; inset:0; background:linear-gradient(100deg, {{ rSk }} 30%, {{ rSk2 }} 50%, {{ rSk }} 70%); background-size:200% 100%; animation:mvShim 1.3s linear infinite;"></div></sc-if>
+                  <sc-if value="{{ it.fail }}">
+                    <div style="position:absolute; inset:0; background:{{ rSk }}; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; color:{{ rFg }};">
+                      <span style="font-family:'Material Symbols Rounded'; font-size:36px; line-height:1; opacity:.7;">broken_image</span>
+                      <div style="font-size:15px; font-weight:600;">{{ it.failLabel }}</div>
+                      <button onClick="{{ it.retry }}" style="height:44px; padding:0 22px; border-radius:22px; border:0; background:var(--ac); color:#fff; font-size:15px; font-weight:600; cursor:pointer;">Tap to retry</button>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-if>
+              <sc-if value="{{ it.isDiv }}">
+                <div style="height:140px; padding:24px 16px; box-sizing:border-box;">
+                  <div style="height:92px; border-radius:12px; background:{{ rCard }}; display:flex; align-items:center; gap:12px; padding:0 16px; color:{{ rFg }};">
+                    <div style="flex:1; display:flex; flex-direction:column; gap:2px;">
+                      <div style="font-size:12px; line-height:16px; color:{{ rFg2 }};">{{ it.endLabel }}</div>
+                      <div style="font-size:15px; line-height:20px; font-weight:600;">{{ it.nextLabel }}</div>
+                    </div>
+                    <span style="font-family:'Material Symbols Rounded'; font-size:24px; line-height:1; color:var(--ac);">arrow_downward</span>
+                  </div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ it.isEnd }}">
+                <div style="height:560px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:10px; padding:0 40px; color:{{ rFg }};">
+                  <span style="font-family:'Material Symbols Rounded'; font-size:48px; line-height:1; color:var(--ok); font-variation-settings:'FILL' 1;">check_circle</span>
+                  <div style="font-size:22px; line-height:28px; font-weight:600;">You're caught up</div>
+                  <div style="font-size:15px; line-height:21px; color:{{ rFg2 }}; text-wrap:pretty;">{{ endSub }}</div>
+                  <div style="display:flex; flex-direction:column; gap:8px; width:100%; padding-top:12px;">
+                    <sc-if value="{{ endShowFav }}"><button onClick="{{ endFav }}" style="height:48px; border:0; border-radius:12px; background:var(--ac); color:#fff; font-size:15px; font-weight:600; cursor:pointer;">Add to favorites</button></sc-if>
+                    <button onClick="{{ endBack }}" style="height:48px; border:0; border-radius:12px; background:{{ rCard }}; color:{{ rFg }}; font-size:15px; font-weight:600; cursor:pointer;">Back to details</button>
+                  </div>
+                </div>
+              </sc-if>
+            </sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ rPaged }}">
+          <div onClick="{{ onRClick }}" onPointerDown="{{ onRDown }}" onPointerMove="{{ onRMove }}" onPointerUp="{{ onRUp }}" onContextMenu="{{ onRCtx }}" style="position:absolute; inset:0; overflow:hidden; user-select:none; -webkit-user-select:none;">
+            <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; transform:{{ zoomT }}; transform-origin:{{ zoomO }}; transition:transform .22s;">
+              <sc-if value="{{ pg.isPage }}">
+                <div aria-label="{{ pg.aria }}" style="position:relative; width:{{ pg.w }}; height:{{ pg.h }}; aspect-ratio:{{ pg.ar }}; max-height:100%; max-width:100%;">
+                  <sc-if value="{{ pg.ok }}"><div style="position:absolute; inset:0; background:{{ pg.bg }};"><span style="position:absolute; left:12px; top:12px; font:500 10px/1 ui-monospace, Menlo, monospace; letter-spacing:0.06em; color:rgba(0,0,0,0.45);">{{ pg.label }}</span></div></sc-if>
+                  <sc-if value="{{ pg.loading }}"><div style="position:absolute; inset:0; background:linear-gradient(100deg, {{ rSk }} 30%, {{ rSk2 }} 50%, {{ rSk }} 70%); background-size:200% 100%; animation:mvShim 1.3s linear infinite;"></div></sc-if>
+                  <sc-if value="{{ pg.fail }}">
+                    <div style="position:absolute; inset:0; background:{{ rSk }}; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; color:{{ rFg }};">
+                      <span style="font-family:'Material Symbols Rounded'; font-size:36px; line-height:1; opacity:.7;">broken_image</span>
+                      <div style="font-size:15px; font-weight:600;">{{ pg.failLabel }}</div>
+                      <button onClick="{{ pg.retry }}" style="height:44px; padding:0 22px; border-radius:22px; border:0; background:var(--ac); color:#fff; font-size:15px; font-weight:600; cursor:pointer;">Tap to retry</button>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-if>
+              <sc-if value="{{ pg.isTrans }}">
+                <div style="width:100%; padding:0 32px; box-sizing:border-box; display:flex; flex-direction:column; gap:24px; color:{{ rFg }};">
+                  <div style="display:flex; flex-direction:column; gap:4px;">
+                    <div style="font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:{{ rFg2 }};">Finished</div>
+                    <div style="font-size:20px; line-height:26px; font-weight:600;">{{ pg.from }}</div>
+                  </div>
+                  <div style="height:1px; background:{{ rCard }};"></div>
+                  <div style="display:flex; flex-direction:column; gap:4px;">
+                    <div style="font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ac);">Next</div>
+                    <div style="font-size:20px; line-height:26px; font-weight:600;">{{ pg.next }}</div>
+                    <div style="font-size:13px; color:{{ rFg2 }}; display:flex; align-items:center; gap:6px; padding-top:4px;"><span style="width:8px; height:8px; border-radius:4px; background:var(--ok);"></span>First pages ready</div>
+                  </div>
+                  <div style="font-size:13px; color:{{ rFg2 }}; padding-top:12px;">{{ pg.hint }}</div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ pg.isEnd }}">
+                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:10px; padding:0 40px; color:{{ rFg }};">
+                  <span style="font-family:'Material Symbols Rounded'; font-size:48px; line-height:1; color:var(--ok); font-variation-settings:'FILL' 1;">check_circle</span>
+                  <div style="font-size:22px; line-height:28px; font-weight:600;">You're caught up</div>
+                  <div style="font-size:15px; line-height:21px; color:{{ rFg2 }}; text-wrap:pretty;">{{ endSub }}</div>
+                  <div style="display:flex; flex-direction:column; gap:8px; width:100%; padding-top:12px;">
+                    <sc-if value="{{ endShowFav }}"><button onClick="{{ endFav }}" style="height:48px; border:0; border-radius:12px; background:var(--ac); color:#fff; font-size:15px; font-weight:600; cursor:pointer;">Add to favorites</button></sc-if>
+                    <button onClick="{{ endBack }}" style="height:48px; border:0; border-radius:12px; background:{{ rCard }}; color:{{ rFg }}; font-size:15px; font-weight:600; cursor:pointer;">Back to details</button>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+        </sc-if>
+        <div style="position:absolute; inset:0; pointer-events:none; background:#000; opacity:{{ dimOp }}; z-index:52;"></div>
+        <sc-if value="{{ showThinProgress }}"><div style="position:absolute; top:0; left:0; height:2px; width:{{ progW }}; background:var(--ac); z-index:53;"></div></sc-if>
+        <sc-if value="{{ showPagePill }}"><div style="position:absolute; bottom:calc(var(--hi) - 10px); left:50%; transform:translateX(-50%); height:22px; padding:0 10px; border-radius:11px; background:rgba(0,0,0,0.55); color:#E6E6EA; font-size:11px; line-height:22px; font-weight:600; z-index:53; pointer-events:none; font-variant-numeric:tabular-nums;">{{ rPageLabel }}</div></sc-if>
+
+        <div style="position:absolute; top:0; left:0; right:0; padding-top:var(--st); background:var(--rbar); backdrop-filter:var(--rblur); -webkit-backdrop-filter:var(--rblur); color:#F2F2F5; z-index:55; opacity:{{ ctrlOp }}; pointer-events:{{ ctrlPE }}; transition:opacity .15s;">
+          <div style="display:flex; align-items:center; gap:2px; height:52px; padding:0 4px;">
+            <button onClick="{{ closeReader }}" aria-label="Back" style="width:44px; height:44px; border:0; background:none; color:inherit; cursor:pointer;"><span style="font-family:'Material Symbols Rounded'; font-size:26px; line-height:1;">{{ backIcon }}</span></button>
+            <div style="flex:1; min-width:0; display:flex; flex-direction:column;">
+              <div style="font-size:15px; line-height:20px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ rTitle }}</div>
+              <div style="font-size:12px; line-height:16px; color:#A0A0AB; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ rChTitle }}</div>
+            </div>
+            <button onClick="{{ openChList }}" aria-label="Chapters" style="width:44px; height:44px; border:0; background:none; color:inherit; cursor:pointer;"><span style="font-family:'Material Symbols Rounded'; font-size:24px; line-height:1;">format_list_bulleted</span></button>
+            <button onClick="{{ toggleMore }}" aria-label="More" style="width:44px; height:44px; border:0; background:none; color:inherit; cursor:pointer;"><span style="font-family:'Material Symbols Rounded'; font-size:24px; line-height:1;">{{ moreIcon }}</span></button>
+          </div>
+        </div>
+        <sc-if value="{{ more }}">
+          <div style="position:absolute; top:calc(var(--st) + 50px); right:10px; z-index:58; width:220px; border-radius:12px; background:#26262E; color:#F2F2F5; box-shadow:0 12px 40px rgba(0,0,0,0.5); overflow:hidden; animation:mvFade .15s;">
+            <sc-for list="{{ moreItems }}" as="o"><button onClick="{{ o.onClick }}" style="width:100%; height:46px; border:0; background:none; color:inherit; display:flex; align-items:center; gap:12px; padding:0 14px; font-size:15px; cursor:pointer; border-top:{{ o.border }};"><span style="font-family:'Material Symbols Rounded'; font-size:20px; line-height:1;">{{ o.icon }}</span>{{ o.label }}</button></sc-for>
+          </div>
+        </sc-if>
+        <div style="position:absolute; left:0; right:0; bottom:0; padding:12px 12px calc(var(--hi) + 4px); background:var(--rbar); backdrop-filter:var(--rblur); -webkit-backdrop-filter:var(--rblur); color:#F2F2F5; z-index:55; opacity:{{ ctrlOp }}; pointer-events:{{ ctrlPE }}; transition:opacity .15s; display:flex; flex-direction:column; gap:8px;">
+          <div style="position:relative; display:flex; align-items:center; gap:12px; padding:0 4px;">
+            <sc-if value="{{ dragging }}">
+              <div style="position:absolute; bottom:34px; left:{{ thumbLeft }}; transform:translateX(-50%); width:64px; display:flex; flex-direction:column; align-items:center; gap:4px; pointer-events:none;">
+                <div style="width:64px; height:96px; border-radius:6px; background:{{ thumbBg }}; box-shadow:0 6px 20px rgba(0,0,0,0.5); border:2px solid #fff;"></div>
+                <span style="font-size:12px; font-weight:700; background:#000; padding:2px 6px; border-radius:6px;">{{ dragP }}</span>
+              </div>
+            </sc-if>
+            <span style="font-size:13px; font-weight:600; min-width:52px; font-variant-numeric:tabular-nums;">{{ rPageLabel }}</span>
+            <input type="range" min="1" max="{{ rPages }}" value="{{ rPage }}" onChange="{{ onSlide }}" onPointerDown="{{ slideDown }}" onPointerUp="{{ slideUp }}" aria-label="Page" style="flex:1; accent-color:var(--ac); direction:{{ sliderDir }}; height:28px;">
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <button onClick="{{ prevCh }}" style="flex:1; height:44px; border:0; border-radius:12px; background:rgba(255,255,255,0.08); color:inherit; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:4px; cursor:pointer; opacity:{{ prevOp }};"><span style="font-family:'Material Symbols Rounded'; font-size:20px; line-height:1;">skip_previous</span>{{ prevLabel }}</button>
+            <button onClick="{{ openRS }}" aria-label="Reader settings" style="width:56px; height:44px; border:0; border-radius:12px; background:rgba(255,255,255,0.08); color:inherit; cursor:pointer;"><span style="font-family:'Material Symbols Rounded'; font-size:22px; line-height:1;">tune</span></button>
+            <button onClick="{{ nextCh }}" style="flex:1; height:44px; border:0; border-radius:12px; background:rgba(255,255,255,0.08); color:inherit; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:4px; cursor:pointer; opacity:{{ nextOp }};">{{ nextLabel }}<span style="font-family:'Material Symbols Rounded'; font-size:20px; line-height:1;">skip_next</span></button>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- TAB BARS -->
+    <sc-if value="{{ showTabsIOS }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute; left:0; right:0; bottom:0; height:83px; background:var(--tb); backdrop-filter:blur(20px) saturate(160%); -webkit-backdrop-filter:blur(20px) saturate(160%); border-top:0.5px solid var(--ln); display:flex; padding-top:6px; box-sizing:border-box; z-index:40;">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="5">
+          <button onClick="{{ t.go }}" aria-label="{{ t.label }}" style="flex:1; height:48px; display:flex; flex-direction:column; align-items:center; gap:2px; border:0; background:none; color:{{ t.color }}; font-size:10px; line-height:12px; font-weight:500; cursor:pointer; padding:0;"><span style="font-family:'Material Symbols Rounded'; font-size:27px; line-height:1; font-variation-settings:{{ t.fv }};">{{ t.icon }}</span>{{ t.label }}</button>
+        </sc-for>
+      </div>
+    </sc-if>
+    <sc-if value="{{ showTabsAndroid }}">
+      <div style="position:absolute; left:0; right:0; bottom:0; height:96px; background:var(--sr); display:flex; align-items:flex-start; padding-top:12px; box-sizing:border-box; z-index:40;">
+        <sc-for list="{{ tabs }}" as="t">
+          <button onClick="{{ t.go }}" aria-label="{{ t.label }}" style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; border:0; background:none; color:{{ t.colorA }}; font-size:12px; line-height:16px; font-weight:{{ t.weightA }}; cursor:pointer; padding:0;"><span style="width:64px; height:32px; border-radius:16px; background:{{ t.pill }}; display:flex; align-items:center; justify-content:center; transition:background .2s;"><span style="font-family:'Material Symbols Rounded'; font-size:24px; line-height:1; font-variation-settings:{{ t.fv }};">{{ t.icon }}</span></span>{{ t.label }}</button>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <!-- SHEETS -->
+    <sc-if value="{{ anySheet }}"><div onClick="{{ closeSheet }}" style="position:absolute; inset:0; background:{{ scrimBg }}; z-index:80; animation:mvFade .2s;"></div></sc-if>
+
+    <sc-if value="{{ shFilter }}">
+      <div style="position:absolute; left:0; right:0; bottom:0; z-index:81; max-height:86%; overflow-y:auto; background:var(--sf); border-radius:16px 16px 0 0; padding:8px 16px calc(var(--hi) + 12px); box-sizing:border-box; animation:mvUp .24s cubic-bezier(.2,.8,.2,1);">
+        <div style="width:36px; height:5px; border-radius:3px; background:var(--ts); opacity:.4; margin:0 auto 12px;"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:8px;"><div style="font-size:17px; font-weight:600;">Filters</div><button onClick="{{ resetFilters }}" style="border:0; background:none; color:var(--ac); font-size:15px; cursor:pointer; height:44px;">Reset</button></div>
+        <sc-for list="{{ filterGroups }}" as="fg">
+          <div style="font-size:13px; color:var(--ts); padding:12px 0 8px;">{{ fg.title }}</div>
+          <div style="display:flex; flex-wrap:wrap; gap:8px;">
+            <sc-for list="{{ fg.chips }}" as="c"><button onClick="{{ c.onClick }}" style="height:34px; padding:0 12px; border-radius:17px; border:{{ c.bd }}; background:{{ c.bg }}; color:{{ c.fg }}; font-size:13px; font-weight:500; display:flex; align-items:center; gap:4px; cursor:pointer; text-decoration:{{ c.td }};"><sc-if value="{{ c.hasIcon }}"><span style="font-family:'Material Symbols Rounded'; font-size:16px; line-height:1;">{{ c.icon }}</span></sc-if>{{ c.label }}</button></sc-for>
+          </div>
+          <sc-if value="{{ fg.note }}"><div style="font-size:12px; color:var(--ts); padding-top:6px;">{{ fg.note }}</div></sc-if>
+        </sc-for>
+        <button onClick="{{ applyFilters }}" style="width:100%; margin-top:20px; height:50px; border:0; border-radius:12px; background:var(--ac); color:#fff; font-size:16px; font-weight:600; cursor:pointer;">{{ applyLabel }}</button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ shSignin }}">
+      <div style="position:absolute; left:0; right:0; bottom:0; z-index:81; background:var(--sf); border-radius:16px 16px 0 0; padding:8px 20px calc(var(--hi) + 12px); box-sizing:border-box; animation:mvUp .24s cubic-bezier(.2,.8,.2,1); display:flex; flex-direction:column; gap:10px;">
+        <div style="width:36px; height:5px; border-radius:3px; background:var(--ts); opacity:.4; margin:0 auto 8px;"></div>
+        <div style="font-size:22px; line-height:28px; font-weight:600;">{{ signinTitle }}</div>
+        <div style="font-size:15px; line-height:21px; color:var(--ts); padding-bottom:8px;">Sync favorites, reading progress and history across your devices. Reading never needs an account.</div>
+        <button onClick="{{ signApple }}" style="height:50px; border:0; border-radius:12px; background:{{ appleBg }}; color:{{ appleFg }}; font-size:16px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer;"><span style="font-size:18px; font-weight:700;"></span>Sign in with Apple</button>
+        <button onClick="{{ signGoogle }}" style="height:50px; border:0.5px solid var(--ln); border-radius:12px; background:var(--sr); color:var(--tp); font-size:16px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer;"><span style="width:18px; height:18px; border-radius:9px; background:conic-gradient(#EA4335 0 25%, #FBBC05 0 50%, #34A853 0 75%, #4285F4 0);"></span>Sign in with Google</button>
+        <button onClick="{{ closeSheet }}" style="height:44px; border:0; background:none; color:var(--ts); font-size:15px; cursor:pointer;">Not now</button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ shMerge }}">
+      <div style="position:absolute; left:0; right:0; bottom:0; z-index:81; background:var(--sf); border-radius:16px 16px 0 0; padding:8px 20px calc(var(--hi) + 12px); box-sizing:border-box; animation:mvUp .24s cubic-bezier(.2,.8,.2,1); display:flex; flex-direction:column; gap:10px;">
+        <div style="width:36px; height:5px; border-radius:3px; background:var(--ts); opacity:.4; margin:0 auto 8px;"></div>
+        <span style="font-family:'Material Symbols Rounded'; font-size:36px; line-height:1; color:var(--ok);">cloud_sync</span>
+        <div style="font-size:22px; line-height:28px; font-weight:600;">Add this phone's reading to your account?</div>
+        <div style="background:var(--sr); border-radius:12px; padding:4px 14px;">
+          <sc-for list="{{ mergeRows }}" as="m"><div style="display:flex; justify-content:space-between; height:40px; align-items:center; border-top:{{ m.border }}; font-size:15px;"><span>{{ m.label }}</span><span style="color:var(--ts);">{{ m.value }}</span></div></sc-for>
+        </div>
+        <div style="font-size:13px; line-height:18px; color:var(--ts);">If a title has progress in both places, we keep the furthest chapter.</div>
+        <button onClick="{{ doMerge }}" style="height:50px; border:0; border-radius:12px; background:var(--ac); color:#fff; font-size:16px; font-weight:600; cursor:pointer;">Merge and sync</button>
+        <button onClick="{{ skipMerge }}" style="height:44px; border:0; background:none; color:var(--ts); font-size:15px; cursor:pointer;">Use account data only</button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ shList }}">
+      <div style="position:absolute; left:0; right:0; bottom:0; z-index:81; max-height:{{ listMaxH }}; overflow-y:auto; background:var(--sf); border-radius:16px 16px 0 0; padding:8px 0 calc(var(--hi) + 8px); box-sizing:border-box; animation:mvUp .24s cubic-bezier(.2,.8,.2,1);">
+        <div style="width:36px; height:5px; border-radius:3px; background:var(--ts); opacity:.4; margin:0 auto 10px;"></div>
+        <div style="font-size:17px; font-weight:600; padding:0 20px 6px;">{{ listTitle }}</div>
+        <sc-if value="{{ listSub }}"><div style="font-size:13px; color:var(--ts); padding:0 20px 8px;">{{ listSub }}</div></sc-if>
+        <sc-for list="{{ listItems }}" as="o">
+          <button onClick="{{ o.onClick }}" style="width:100%; min-height:50px; border:0; background:{{ o.bg }}; color:{{ o.color }}; display:flex; align-items:center; gap:14px; padding:0 20px; font-size:15px; text-align:left; cursor:pointer;">
+            <span style="font-family:'Material Symbols Rounded'; font-size:22px; line-height:1; color:{{ o.iconColor }};">{{ o.icon }}</span>
+            <span style="flex:1; display:flex; flex-direction:column;"><span style="font-weight:{{ o.weight }};">{{ o.label }}</span><span style="font-size:12px; color:var(--ts);">{{ o.sub }}</span></span>
+            <span style="font-family:'Material Symbols Rounded'; font-size:20px; line-height:1; color:var(--ac);">{{ o.check }}</span>
+          </button>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ shJump }}">
+      <div style="position:absolute; left:0; right:0; bottom:0; z-index:81; background:var(--sf); border-radius:16px 16px 0 0; padding:8px 16px calc(var(--hi) + 12px); box-sizing:border-box; animation:mvUp .24s cubic-bezier(.2,.8,.2,1); display:flex; flex-direction:column; gap:12px;">
+        <div style="width:36px; height:5px; border-radius:3px; background:var(--ts); opacity:.4; margin:0 auto 4px;"></div>
+        <div style="font-size:17px; font-weight:600;">Jump to chapter</div>
+        <div style="display:flex; gap:8px;">
+          <input value="{{ jumpVal }}" onChange="{{ onJumpInput }}" inputmode="numeric" placeholder="{{ jumpPh }}" style="flex:1; min-width:0; height:48px; border-radius:12px; border:0; background:var(--sr); color:var(--tp); font-size:17px; padding:0 14px; outline:none;">
+          <button onClick="{{ jumpGo }}" style="height:48px; padding:0 22px; border:0; border-radius:12px; background:var(--ac); color:#fff; font-size:15px; font-weight:600; cursor:pointer;">Go</button>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:8px;">
+          <sc-for list="{{ jumpBuckets }}" as="b"><button onClick="{{ b.onClick }}" style="height:44px; border:0; border-radius:10px; background:var(--sr); color:var(--tp); font-size:13px; font-weight:500; cursor:pointer; font-variant-numeric:tabular-nums;">{{ b.label }}</button></sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ shRS }}">
+      <div style="position:absolute; left:0; right:0; bottom:0; z-index:81; height:54%; overflow-y:auto; background:var(--sf); border-radius:16px 16px 0 0; padding:8px 16px calc(var(--hi) + 12px); box-sizing:border-box; animation:mvUp .24s cubic-bezier(.2,.8,.2,1); box-shadow:0 -10px 40px rgba(0,0,0,0.5);">
+        <div style="width:36px; height:5px; border-radius:3px; background:var(--ts); opacity:.4; margin:0 auto 10px;"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center;"><div style="font-size:17px; font-weight:600;">Reader settings</div><div style="font-size:12px; color:var(--ts);">Saved for this title</div></div>
+        <div style="font-size:13px; color:var(--ts); padding:14px 0 8px;">Mode</div>
+        <div style="display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px;">
+          <sc-for list="{{ modeOpts }}" as="o"><button onClick="{{ o.onClick }}" style="height:48px; border:{{ o.bd }}; border-radius:12px; background:{{ o.bg }}; color:var(--tp); font-size:13px; font-weight:600; display:flex; align-items:center; gap:8px; padding:0 12px; cursor:pointer;"><span style="font-family:'Material Symbols Rounded'; font-size:20px; line-height:1;">{{ o.icon }}</span>{{ o.label }}</button></sc-for>
+        </div>
+        <div style="font-size:13px; color:var(--ts); padding:16px 0 8px;">Background</div>
+        <div style="display:flex; gap:12px;">
+          <sc-for list="{{ bgOpts }}" as="o"><button onClick="{{ o.onClick }}" style="flex:1; border:0; background:none; color:var(--tp); display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer; font-size:12px;"><span style="width:44px; height:44px; border-radius:22px; background:{{ o.color }}; box-shadow:{{ o.ring }};"></span>{{ o.label }}</button></sc-for>
+        </div>
+        <div style="font-size:13px; color:var(--ts); padding:16px 0 8px;">Fit</div>
+        <div style="display:flex; gap:4px; background:var(--sr); border-radius:12px; padding:4px;">
+          <sc-for list="{{ fitOpts }}" as="o"><button onClick="{{ o.onClick }}" style="flex:1; height:36px; border:0; border-radius:9px; background:{{ o.bg }}; color:var(--tp); font-size:13px; font-weight:600; cursor:pointer;">{{ o.label }}</button></sc-for>
+        </div>
+        <div style="font-size:13px; color:var(--ts); padding:16px 0 8px;">Brightness</div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-family:'Material Symbols Rounded'; font-size:20px; line-height:1; color:var(--ts);">brightness_low</span>
+          <input type="range" min="20" max="100" value="{{ bright }}" onChange="{{ onBright }}" aria-label="Brightness" style="flex:1; accent-color:var(--ac);">
+          <span style="font-family:'Material Symbols Rounded'; font-size:20px; line-height:1; color:var(--ts);">brightness_high</span>
+        </div>
+        <div style="margin-top:14px; border-radius:12px; background:var(--sr); overflow:hidden;">
+          <sc-for list="{{ rsToggles }}" as="row">
+            <div onClick="{{ row.onClick }}" style="display:flex; align-items:center; gap:12px; min-height:48px; padding:0 14px; border-top:{{ row.border }}; cursor:pointer;">
+              <span style="flex:1; font-size:15px;">{{ row.label }}</span>
+              <span style="position:relative; width:46px; height:28px; flex:none; border-radius:14px; background:{{ row.track }}; transition:background .2s;"><span style="position:absolute; top:3px; left:{{ row.knob }}; width:22px; height:22px; border-radius:11px; background:#fff; transition:left .2s;"></span></span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ toast }}">
+      <div style="position:absolute; left:16px; right:16px; bottom:{{ toastBottom }}; z-index:90; min-height:48px; border-radius:12px; background:#2A2A32; color:#F2F2F5; display:flex; align-items:center; gap:12px; padding:0 8px 0 16px; box-shadow:0 10px 30px rgba(0,0,0,0.4); animation:mvUp .2s;">
+        <span style="flex:1; font-size:14px; line-height:19px;">{{ toast }}</span>
+        <sc-if value="{{ hasToastAction }}"><button onClick="{{ toastAction }}" style="height:40px; padding:0 12px; border:0; background:none; color:#FF8A8D; font-size:14px; font-weight:600; cursor:pointer;">Undo</button></sc-if>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isIOS }}" hint-placeholder-val="{{ true }}"><div style="position:absolute; left:50%; top:11px; width:124px; height:36px; margin-left:-62px; border-radius:20px; background:#000; z-index:99;"></div></sc-if>
+    <sc-if value="{{ isAndroid }}"><div style="position:absolute; left:50%; top:12px; width:14px; height:14px; margin-left:-7px; border-radius:7px; background:#000; z-index:99;"></div></sc-if>
+    <sc-if value="{{ statusVisible }}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute; top:0; left:0; right:0; height:var(--st); display:flex; align-items:center; justify-content:space-between; padding:0 {{ stPad }}; box-sizing:border-box; z-index:98; pointer-events:none; color:{{ statusColor }}; font-size:{{ stSize }}; font-weight:600;">
+        <span>9:41</span>
+        <div style="display:flex; gap:3px; align-items:center;">
+          <span style="font-family:'Material Symbols Rounded'; font-size:17px; line-height:1; font-variation-settings:'FILL' 1;">signal_cellular_alt</span>
+          <span style="font-family:'Material Symbols Rounded'; font-size:17px; line-height:1; font-variation-settings:'FILL' 1;">{{ wifiIcon }}</span>
+          <span style="font-family:'Material Symbols Rounded'; font-size:19px; line-height:1; font-variation-settings:'FILL' 1;">{{ batIcon }}</span>
+        </div>
+      </div>
+    </sc-if>
+    <div style="position:absolute; left:50%; bottom:8px; width:{{ hiW }}; height:5px; transform:translateX(-50%); border-radius:3px; background:{{ hiColor }}; z-index:99; pointer-events:none;"></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;platform&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;iOS&quot;,&quot;Android&quot;],&quot;default&quot;:&quot;iOS&quot;,&quot;tsType&quot;:&quot;'iOS'|'Android'&quot;},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Dark&quot;,&quot;Light&quot;,&quot;OLED Black&quot;],&quot;default&quot;:&quot;Dark&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;accentMode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Fixed red&quot;,&quot;From cover&quot;],&quot;default&quot;:&quot;Fixed red&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const MANGA=[
+{id:'ashen',t:'Ashen Crown Requiem',alt:'Haiiro no Ōkan · The Grey Crown',au:'Kei Morisawa',type:'Manga',status:'Ongoing',src:'MangaDex',also:['MangaPill','WeebCentral'],g:['Action','Dark fantasy','Drama'],latest:118,hue:28,syn:"When the last king of Varn burns with his city, a palace gardener walks out of the ash wearing his crown, and every noble house wants it back. Hunted, unable to take it off and haunted by the dead king's memories, Iri has to decide whether to give the crown up or become the ruler nobody asked for. A slow-burn political fantasy with brutal fights and quieter, heartbreaking chapters in between."},
+{id:'tower',t:'The Hundredth Floor Returner',alt:'Return of the 100th Floor · 100층의 귀환자',au:'Jang Seol · art by Moonbit',type:'Manhwa',status:'Ongoing',src:'AsuraScans',also:['MangaDex'],g:['Action','Fantasy','Regression'],latest:214,hue:255,syn:"Han Doyun died on the hundredth floor of the Tower, one step from the top. He wakes up ten years earlier on the first floor with every trap, boss and betrayal still in his head. This time he climbs alone, and fast, and he already knows which of his old party members will try to kill him."},
+{id:'neon',t:'Neon Saint Protocol',alt:'Protocol: Saint',au:'Oh Haerin',type:'Manhwa',status:'Ongoing',src:'WeebCentral',also:[],g:['Sci-fi','Action'],latest:88,hue:305,syn:"In a megacity where prayers are processed like support tickets, a burnt-out cleric hacker finds out the city's god is a crashed server, and she's the only admin left."},
+{id:'void',t:'Voidwalker Rank: F',alt:'F급 보이드워커',au:'Seo Minjae',type:'Manhwa',status:'Ongoing',src:'AsuraScans',also:['MangaDex','WeebCentral'],g:['Action','Fantasy'],latest:176,hue:275,syn:"Rated the weakest hunter on record, Kang Ji-ho can only step half a second into the void. It turns out half a second is enough."},
+{id:'jade',t:'Jade River Sword Saint',alt:'Yù Hé Jiàn Shèng',au:'Lin Qiu',type:'Manhua',status:'Ongoing',src:'MangaPill',also:['WeebCentral'],g:['Martial arts','Action','Fantasy'],latest:402,hue:160,syn:"A ferryman's son with crippled meridians fishes a broken sword out of the Jade River and, with it, the restless spirit of the sect master who forged it."},
+{id:'quiet',t:'Our Quiet Rooftop Days',alt:'옥상의 조용한 날들',au:'Bae Yuna',type:'Manhwa',status:'Hiatus',src:'WeebCentral',also:['MangaDex'],g:['Romance','Drama','School'],latest:63,hue:350,syn:"Two students skip the same lunch period on the same rooftop for a whole year without ever speaking. Then one of them leaves a note."},
+{id:'fox',t:'Lantern Fox of Kuroshima',alt:'Kuroshima no Chōchin Gitsune',au:'Aya Tsukimoto',type:'Manga',status:'Ongoing',src:'MangaDex',also:[],g:['Fantasy','Mystery'],latest:31,hue:50,syn:"On an island where the dead come home every summer, a fox spirit runs the only lantern shop, and someone has been stealing the lights."},
+{id:'ember',t:"The Ember Duke's Second Wife",alt:'불꽃 공작의 두 번째 아내',au:'Yoon Seha',type:'Manhwa',status:'Ongoing',src:'WeebCentral',also:['MangaPill'],g:['Romance','Historical','Drama'],latest:97,hue:12,syn:"Married off to a duke rumored to have burned his first wife, Lady Seren decides the best defense is a very detailed contract."},
+{id:'tea',t:'A Teahouse at the End of Winter',alt:'Fuyu no Owari no Chamise',au:'Hana Kiriyama',type:'Manga',status:'Completed',src:'MangaPill',also:['MangaDex'],g:['Slice of life','Romance'],latest:46,hue:85,syn:"A retired cook reopens her late husband's mountain teahouse for one last season. Every guest brings a story; most of them stay for a second cup."},
+{id:'grave',t:"Gravekeeper's Ledger",alt:'Hakamori no Daichō',au:'Ren Osaragi',type:'Manga',status:'Ongoing',src:'MangaPill',also:[],g:['Horror','Mystery'],latest:140,hue:200,syn:"Every name in the cemetery ledger is a debt. The new gravekeeper intends to collect."},
+{id:'iron',t:'Ironbloom Academy',alt:'Tekka Gakuen',au:'Sho Imai',type:'Manga',status:'Ongoing',src:'MangaDex',also:[],g:['Comedy','School','Action'],latest:57,hue:215,syn:"A botany nerd accidentally enrolls in the country's top school for mech pilots and keeps winning by gardening."},
+{id:'salt',t:'Salt and Starlight',alt:'소금과 별빛',au:'Han Ari',type:'Manhwa',status:'Ongoing',src:'AsuraScans',also:[],g:['Romance','Fantasy'],latest:12,hue:232,syn:"A lighthouse keeper's daughter and a shipwrecked star trade one truth a night until the tide turns."},
+{id:'cloud',t:'Cloudline Couriers',alt:'Kumo-sen Bin',au:'Mio Hasegawa',type:'Manga',status:'Ongoing',src:'MangaDex',also:[],g:['Adventure','Comedy'],latest:22,hue:190,syn:"Two teenage couriers deliver parcels between floating islands with one glider and zero sense of direction."},
+{id:'koi',t:'Koi in the Library Pond',alt:'Toshokan no Ike no Koi',au:'Nao Fujisaki',type:'Manga',status:'Ongoing',src:'MangaDex',also:['MangaPill'],g:['Slice of life','Comedy'],latest:8,hue:135,syn:"The school library has a pond, the pond has a koi, and the koi has opinions about what everyone is reading. A gentle comedy about a book club that meets wherever the fish tells them to."}
+];
+const BY={}; MANGA.forEach(m=>BY[m.id]=m);
+const SOURCES=['MangaDex','MangaPill','AsuraScans','WeebCentral'];
+const GENRES=['Action','Romance','Fantasy','Drama','Comedy','Slice of life','Horror','Mystery','Sci-fi','Martial arts','Historical','School'];
+const NEW={jade:5,ashen:3,void:2,ember:1};
+const POP=['tower','jade','void','ashen','ember','neon','grave','quiet','iron','fox','tea','salt','cloud','koi'];
+const CAT={tower:'Reading',ashen:'Reading',neon:'Reading',void:'Reading',jade:'Reading',quiet:'Reading',fox:'Plan to read',ember:'Plan to read',tea:'Completed'};
+const WORDS=['The Ash Garden','Embers','A Promise Kept','Night Market','Cold Iron','Old Debts','The Long Stair','Lanterns','Crossing','First Snow','The Ledger','Quiet Hours','Undertow','Glass Bells'];
+const THEMES={
+ dark:{bg:'#0E0E11',sf:'#17171C',sr:'#202027',tp:'#F2F2F5',ts:'#A0A0AB',ac:'#FF5A5F',ok:'#3DD68C',wn:'#F5B841',ln:'rgba(255,255,255,0.08)',sk:'#1C1C22',sk2:'#2A2A32',tb:'rgba(20,20,25,0.82)',acs:'rgba(255,90,95,0.14)'},
+ light:{bg:'#FAFAFB',sf:'#FFFFFF',sr:'#F1F1F4',tp:'#121216',ts:'#5C5C66',ac:'#E8484D',ok:'#1FA463',wn:'#C98A0B',ln:'rgba(0,0,0,0.09)',sk:'#ECECF0',sk2:'#F7F7F9',tb:'rgba(250,250,251,0.86)',acs:'rgba(232,72,77,0.12)'},
+ oled:{bg:'#000000',sf:'#0D0D10',sr:'#18181D',tp:'#F2F2F5',ts:'#A0A0AB',ac:'#FF5A5F',ok:'#3DD68C',wn:'#F5B841',ln:'rgba(255,255,255,0.09)',sk:'#121216',sk2:'#1E1E24',tb:'rgba(0,0,0,0.85)',acs:'rgba(255,90,95,0.16)'}
+};
+const PLAT={
+ ios:{ff:"-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif",h1s:'34px',h1w:'700',st:'54px',pw:'393px',ph:'852px',prad:'55px',tabh:'83px',hi:'34px',rbar:'rgba(22,22,26,0.72)',rblur:'blur(24px) saturate(160%)'},
+ android:{ff:"Roboto, system-ui, sans-serif",h1s:'28px',h1w:'500',st:'40px',pw:'412px',ph:'892px',prad:'40px',tabh:'96px',hi:'24px',rbar:'rgba(12,12,14,0.92)',rblur:'none'}
+};
+const RBG={'Black':'#000000','Dark gray':'#1C1C20','White':'#FFFFFF','Sepia':'#F1E6CF'};
+const MODES=[['vertical','Webtoon scroll','view_day'],['rtl','Right to left','auto_stories'],['ltr','Left to right','menu_book'],['pagedV','Vertical pages','swap_vert']];
+const MODE_NAME={vertical:'Webtoon scroll',rtl:'Right to left',ltr:'Left to right',pagedV:'Vertical pages'};
+const BASE=new Date(2026,9,15);
+const cover=h=>`repeating-linear-gradient(135deg, rgba(255,255,255,0.05) 0 2px, transparent 2px 10px), linear-gradient(165deg, oklch(0.56 0.11 ${h}), oklch(0.27 0.07 ${h+40}))`;
+const webPage=(h,c,p)=>{const a=h+((p*37)%80)-40,b=a+25;return `repeating-linear-gradient(135deg, rgba(255,255,255,0.045) 0 2px, transparent 2px 14px), linear-gradient(180deg, oklch(0.42 0.06 ${a}), oklch(0.3 0.05 ${b}))`;};
+const paper=p=>`repeating-linear-gradient(135deg, rgba(0,0,0,0.04) 0 2px, transparent 2px 14px), ${p%2?'#EDEBE7':'#E9E7E2'}`;
+function pagesOf(id,n){ if(id==='ashen'&&n===112) return 38; if(id==='tower'&&n===213) return 61; return 18+((n*7+id.length*3)%22); }
+const chTitle=n=>WORDS[n%WORDS.length];
+function chDate(m,n){ const d=new Date(BASE); d.setDate(d.getDate()-(m.latest-n)*7); return d.toLocaleDateString('en-US',d.getFullYear()===2026?{month:'short',day:'numeric'}:{month:'short',day:'numeric',year:'numeric'}); }
+const IC=on=>on?"'FILL' 1":"'FILL' 0";
+
+class Component extends DCLogic {
+  state={screen:'home',tab:'home',plat:null,theme:null,homeState:'ok',libState:'ok',srcFilter:'All sources',
+    sheet:null,sheetData:null,more:false,toast:null,railKey:'Home · Default',
+    detailId:'ashen',detailSrc:'MangaDex',synMore:false,altOpen:false,chDesc:true,flashCh:null,jumpVal:'',
+    q:'',searchPhase:'idle',browse:false,recents:['sword saint','rooftop','regression manhwa','Lantern Fox'],
+    filters:{src:'All',inc:[],exc:[],status:'Any',type:'Any',sort:'Relevance'},draft:null,
+    libCols:3,libView:'grid',libCat:'All',libSort:'Last read',libUnread:false,libSrc:'All',
+    signedIn:false,signinCtx:null,favs:['tower','ashen','neon','void','jade','quiet','fox','ember','tea'],
+    prog:{ashen:{ch:112,page:14},tower:{ch:213,page:22},neon:{ch:87,page:30},void:{ch:170,page:12},quiet:{ch:40,page:9},jade:{ch:388,page:5},tea:{ch:46,page:1,done:true}},
+    readOv:{},
+    history:[{key:'h1',id:'tower',ch:213,page:22,time:'11:48 PM',day:'Today'},{key:'h2',id:'ashen',ch:112,page:14,time:'10:15 PM',day:'Today'},{key:'h3',id:'neon',ch:87,page:30,time:'8:02 PM',day:'Yesterday'},{key:'h4',id:'void',ch:170,page:12,time:'7:40 PM',day:'Yesterday'},{key:'h5',id:'quiet',ch:40,page:9,time:'Tuesday',day:'This week'},{key:'h6',id:'jade',ch:388,page:5,time:'Monday',day:'This week'},{key:'h7',id:'grave',ch:12,page:20,time:'Oct 2',day:'Earlier'}],
+    swKey:null,swDx:0,onbGenres:[],modes:{},readerDefault:'Auto',
+    r:null,mode:'vertical',rCh:1,rPage:1,maxCh:1,pIdx:0,controls:false,rBg:'Black',fit:'Width',gap:false,keepOn:true,bright:100,dim:true,showNum:true,invert:false,zoom:null,dragging:false,dragP:1,prevScreen:'home',
+    srcOn:{MangaDex:true,MangaPill:true,AsuraScans:true,WeebCentral:true},prefetch:5,dataSaver:true,cache:'1.2 GB'};
+  rootRef=React.createRef(); vRef=React.createRef(); detRef=React.createRef(); qRef=React.createRef();
+  loaded={}; seqCache={};
+
+  componentDidMount(){ this.applyVars(); this.timer=setInterval(()=>this.tick(),130); }
+  componentDidUpdate(pp){ if(pp.theme!==this.props.theme&&this.state.theme) this.setState({theme:null}); if(pp.platform!==this.props.platform&&this.state.plat) this.setState({plat:null}); this.applyVars(); }
+  componentWillUnmount(){ clearInterval(this.timer); clearTimeout(this.qt); clearTimeout(this.tt); }
+  get plat(){ return this.state.plat || ((this.props.platform||'iOS')==='Android'?'android':'ios'); }
+  get themeKey(){ return this.state.theme || ({'Dark':'dark','Light':'light','OLED Black':'oled'}[this.props.theme]||'dark'); }
+  applyVars(){ const el=this.rootRef.current; if(!el) return; const v={...THEMES[this.themeKey],...PLAT[this.plat]}; for(const k in v) el.style.setProperty('--'+k,v[k]); }
+
+  toastMsg(msg,undo){ clearTimeout(this.tt); this.undoFn=undo||null; this.setState({toast:msg}); this.tt=setTimeout(()=>this.setState({toast:null}),2600); }
+  base(p){ this.setState({sheet:null,more:false,...p}); }
+  go(tab){ this.base({screen:tab,tab}); if(tab==='search') setTimeout(()=>this.qRef.current&&this.qRef.current.focus({preventScroll:true}),60); }
+  openDetails(id){ this.base({screen:'details',detailId:id,detailSrc:BY[id].src,synMore:false,altOpen:false,flashCh:null}); setTimeout(()=>{ if(this.detRef.current) this.detRef.current.scrollTop=0; },0); }
+  defMode(m){ return m.type==='Manga'?'rtl':'vertical'; }
+  seqFor(r){ const k=r.id+'-'+r.start; if(this.seqCache[k]) return this.seqCache[k]; const seq=[]; for(let c=r.start;c<=r.latest;c++){ const n=pagesOf(r.id,c); for(let p=1;p<=n;p++) seq.push({type:'page',c,p,n}); seq.push({type:c<r.latest?'trans':'end',c,n}); } return this.seqCache[k]=seq; }
+  isRead(id,n){ const o=this.state.readOv[id+'-'+n]; if(o!==undefined) return o; const pr=this.state.prog[id]; return pr?(pr.done||n<pr.ch):false; }
+  progPatch(id,c,p){ const s=this.state; const prog={...s.prog,[id]:{ch:c,page:p}}; const h=s.history.filter(x=>!(x.id===id&&x.day==='Today')); h.unshift({key:id+'-now',id,ch:c,page:p,time:'Just now',day:'Today'}); return {prog,history:h}; }
+
+  openReader(id,ch,page,opts){ opts=opts||{}; const s=this.state, m=BY[id]; const mode=opts.mode||s.modes[id]||(s.readerDefault==='Auto'?this.defMode(m):s.readerDefault);
+    this.loaded={}; this.slow=!!opts.slow; this.failKey=opts.fail?`${ch}-${page}`:null; this.ctrlTop=null;
+    if(!opts.slow&&!opts.fail) this.loaded[`${ch}-${page}`]='ok';
+    const r={id,start:ch,latest:m.latest};
+    const patch={screen:'reader',r,mode,rCh:ch,rPage:page,maxCh:ch+1,controls:!!opts.controls,sheet:opts.sheet||null,more:false,zoom:null,dragging:false,prevScreen:s.screen==='reader'?s.prevScreen:s.screen};
+    if(mode!=='vertical'){ const seq=this.seqFor(r); const i=opts.at==='trans'?seq.findIndex(x=>x.type==='trans'&&x.c===ch):opts.at==='end'?seq.length-1:seq.findIndex(x=>x.type==='page'&&x.c===ch&&x.p===page); patch.pIdx=Math.max(0,i); }
+    this.setState(patch,()=>{ if(mode==='vertical') requestAnimationFrame(()=>this.scrollV(ch,page,opts.at)); });
+  }
+  scrollV(c,p,at){ const el=this.vRef.current; if(!el||!this.vItems) return; let it; if(at==='div') it=this.vItems.find(x=>x.type==='div'&&x.c===c); else if(at==='end') it=this.vItems.find(x=>x.type==='end'); else it=this.vItems.find(x=>x.type==='page'&&x.c===c&&x.p===p); if(!it) return; let top=it.y; if(at==='div') top=it.y-el.clientHeight*0.45; if(at==='end') top=it.y-140; el.scrollTop=top; }
+  windowKeys(){ const s=this.state; if(!s.r) return []; const out=[]; let c=s.rCh,p=s.rPage; for(let i=0;i<=s.prefetch+1;i++){ out.push(`${c}-${p}`); p++; if(p>pagesOf(s.r.id,c)){ if(c>=s.r.latest) break; c++; p=1; } } for(let b=1;b<=2;b++){ if(s.rPage-b>=1) out.push(`${s.rCh}-${s.rPage-b}`); } return out; }
+  tick(){ const s=this.state; if(s.screen!=='reader'||!s.r) return; this.tc=(this.tc||0)+1; if(this.slow&&this.tc%8) return; for(const k of this.windowKeys()){ if(!this.loaded[k]){ this.loaded[k]=this.failKey===k?'fail':'ok'; if(this.failKey===k) this.failKey=null; this.forceUpdate(); return; } } }
+  retry(k){ this.loaded[k]='loading'; this.forceUpdate(); setTimeout(()=>{ this.loaded[k]='ok'; this.forceUpdate(); },700); }
+  pagedGo(dir){ const s=this.state; const seq=this.seqFor(s.r); const i=Math.max(0,Math.min(seq.length-1,s.pIdx+dir)); if(i===s.pIdx) return; const it=seq[i]; const patch={pIdx:i,zoom:null}; if(it.type==='page') Object.assign(patch,{rCh:it.c,rPage:it.p},this.progPatch(s.r.id,it.c,it.p)); this.setState(patch); }
+
+  onVScroll=()=>{ const el=this.vRef.current, s=this.state; if(!el||!this.vItems) return; const top=el.scrollTop; if(s.controls&&!s.sheet){ if(this.ctrlTop==null) this.ctrlTop=top; else if(Math.abs(top-this.ctrlTop)>90) this.setState({controls:false,more:false}); }
+    const y=top+el.clientHeight*0.4; let it=null; for(const x of this.vItems){ if(x.y<=y) it=x; else break; } if(!it) return; const c=it.c, p=it.type==='page'?it.p:it.n;
+    if(c!==s.rCh||p!==s.rPage) this.setState({rCh:c,rPage:p,maxCh:Math.max(s.maxCh,c+1),...this.progPatch(s.r.id,c,p)}); };
+  onRDown=(e)=>{ this.lp=false; this.down={x:e.clientX,y:e.clientY}; clearTimeout(this.lpT); this.lpT=setTimeout(()=>{ this.lp=true; this.setState({sheet:'pageMenu'}); },550); };
+  onRMove=(e)=>{ if(this.down&&Math.hypot(e.clientX-this.down.x,e.clientY-this.down.y)>8) clearTimeout(this.lpT); };
+  onRUp=()=>clearTimeout(this.lpT);
+  onRCtx=(e)=>{ e.preventDefault(); clearTimeout(this.lpT); this.lp=true; this.setState({sheet:'pageMenu'}); };
+  onRClick=(e)=>{ const s=this.state; if(this.lp){ this.lp=false; return; } if(s.more){ this.setState({more:false}); return; }
+    const rect=e.currentTarget.getBoundingClientRect(); const fx=(e.clientX-rect.left)/rect.width, fy=(e.clientY-rect.top)/rect.height;
+    if(s.mode==='vertical'){ this.ctrlTop=null; this.setState({controls:!s.controls}); return; }
+    clearTimeout(this.ct); if(e.detail>=2){ this.setState(z=>({zoom:z.zoom?null:{x:fx*100,y:fy*100}})); return; }
+    this.ct=setTimeout(()=>{ const st=this.state; const zone=st.mode==='pagedV'?(fy<0.3?-1:fy>0.7?1:0):(fx<0.3?-1:fx>0.7?1:0); if(zone===0||st.zoom){ this.setState({controls:!st.controls}); return; } let dir=st.mode==='rtl'?-zone:zone; if(st.invert) dir=-dir; this.pagedGo(dir); },200); };
+  onSlide=(e)=>{ const s=this.state, p=+e.target.value; this.setState({dragP:p}); if(s.mode==='vertical') this.scrollV(s.rCh,p); else { const seq=this.seqFor(s.r); const i=seq.findIndex(x=>x.type==='page'&&x.c===s.rCh&&x.p===p); if(i>=0) this.setState({pIdx:i,rPage:p,...this.progPatch(s.r.id,s.rCh,p)}); } };
+  onQ=(e)=>{ const q=e.target.value; clearTimeout(this.qt); if(!q){ this.setState({q,searchPhase:'idle',browse:false}); return; } this.setState({q,searchPhase:'loading'}); this.qt=setTimeout(()=>this.setState({searchPhase:'results'}),450); };
+  onQKey=(e)=>{ if(e.key==='Enter'&&this.state.q){ const q=this.state.q; this.setState(s=>({recents:[q,...s.recents.filter(x=>x!==q)].slice(0,6),searchPhase:'results'})); } };
+  setQ(q){ clearTimeout(this.qt); this.setState({q,searchPhase:'loading',browse:false}); this.qt=setTimeout(()=>this.setState({searchPhase:'results'}),450); }
+  seeAll(sort){ this.base({screen:'search',tab:'search',q:'',browse:true,searchPhase:'results',filters:{...this.state.filters,sort}}); }
+  toggleFav(id){ const s=this.state; if(s.favs.includes(id)){ this.setState({favs:s.favs.filter(x=>x!==id)}); this.toastMsg('Removed from Library',()=>this.setState(z=>({favs:[...z.favs,id]}))); } else { this.setState({favs:[...s.favs,id]}); if(!s.signedIn) this.setState({sheet:'signin',signinCtx:'fav'}); else this.toastMsg('Added to Library'); } }
+  jumpTo(n){ const m=BY[this.state.detailId]; n=Math.max(1,Math.min(m.latest,n|0)); this.setState({sheet:null,flashCh:n},()=>{ const el=this.detRef.current; const row=el&&el.querySelector(`[data-ch="${n}"]`); if(row) el.scrollTop=row.offsetTop-140; setTimeout(()=>this.setState({flashCh:null}),1400); }); }
+
+  renderVals(){
+    const s=this.state, P=this.plat, ios=P==='ios', tk=this.themeKey, light=tk==='light';
+    const fav=id=>s.favs.includes(id);
+    const chip=(label,on,onClick)=>({label,onClick,bg:on?'var(--tp)':'var(--sr)',fg:on?'var(--bg)':'var(--tp)',bd:'0',td:'none',hasIcon:false,icon:''});
+    const seg=(label,on,onClick)=>({label,onClick,bg:on?'var(--sr)':'transparent'});
+    const segR=(label,on,onClick)=>({label,onClick,bg:on?'#2E2E36':'transparent',fg:on?'#F2F2F5':'#A0A0AB'});
+    const card=id=>{ const m=BY[id], pr=s.prog[id]; const unread=pr?(pr.done?0:m.latest-pr.ch):m.latest; return {id,t:m.t,cover:cover(m.hue),src:m.src,type:m.type,hasNew:!!NEW[id]&&fav(id),newLabel:`${NEW[id]||0} new`,unread,unreadAria:`${unread} unread chapters`,hasUnread:fav(id)&&unread>0,progW:pr?Math.round((pr.done?1:pr.ch/m.latest)*100)+'%':'0%',srcDown:id==='void',open:()=>this.openDetails(id),
+      listSub:pr?(pr.done?`Completed · ${m.latest} chapters`:`Ch. ${pr.ch} of ${m.latest} · ${m.src}`):`Not started · ${m.latest} chapters · ${m.src}`}; };
+    const srcOk=id=>s.srcFilter==='All sources'||BY[id].src===s.srcFilter;
+    const v={rootRef:this.rootRef,vRef:this.vRef,detRef:this.detRef,qRef:this.qRef,isIOS:ios,isAndroid:!ios,
+      sk2:[1,2],sk3:[1,2,3],sk4:[1,2,3,4],sk9:[1,2,3,4,5,6,7,8,9],
+      backIcon:ios?'chevron_left':'arrow_back',moreIcon:ios?'more_horiz':'more_vert',shareIcon:ios?'ios_share':'share'};
+    const sc=s.screen;
+    Object.assign(v,{sOnb1:sc==='onb1',sOnb2:sc==='onb2',sHome:sc==='home',sSearch:sc==='search',sDetails:sc==='details',sLib:sc==='library',sHist:sc==='history',sSet:sc==='settings',sReader:sc==='reader'});
+    const tabScreens=['home','search','details','library','history','settings'];
+    v.showTabsIOS=ios&&tabScreens.includes(sc); v.showTabsAndroid=!ios&&tabScreens.includes(sc);
+    v.tabs=[['home','Home','home'],['search','Search','search'],['library','Library','bookmarks'],['history','History','history'],['settings','Settings','settings']].map(([k,l,i])=>{const on=s.tab===k;return {label:l,icon:i,go:()=>this.go(k),color:on?'var(--ac)':'var(--ts)',fv:IC(on&&k!=='search'),colorA:on?'var(--tp)':'var(--ts)',weightA:on?'700':'500',pill:on?'var(--acs)':'transparent'};});
+
+    // rail
+    const J=(label,fn)=>({label,go:()=>{ this.slow=false; fn(); this.setState({railKey:label}); },bg:s.railKey===label?'#202027':'transparent',fg:s.railKey===label?'#F2F2F5':'#A0A0AB'});
+    const H=(st)=>()=>this.base({screen:'home',tab:'home',homeState:st});
+    const L=(st,view)=>()=>this.base({screen:'library',tab:'library',libState:st,libView:view||'grid',libCat:'All',libUnread:false});
+    v.rail=[
+      {label:'First launch',items:[J('Welcome',()=>this.base({screen:'onb1'})),J('Pick genres',()=>this.base({screen:'onb2'}))]},
+      {label:'Home',items:[J('Home · Default',H('ok')),J('Home · Loading',H('loading')),J('Home · Empty',H('empty')),J('Home · Error',H('error')),J('Home · Offline',H('offline'))]},
+      {label:'Search',items:[J('Recent searches',()=>this.base({screen:'search',tab:'search',q:'',searchPhase:'idle',browse:false})),J('Typing (loading)',()=>{clearTimeout(this.qt);this.base({screen:'search',tab:'search',q:'swo',searchPhase:'loading',browse:false});}),J('Results',()=>this.base({screen:'search',tab:'search',q:'sword',searchPhase:'results',browse:false})),J('Filter sheet',()=>this.base({screen:'search',tab:'search',q:'',searchPhase:'results',browse:true,sheet:'filter',draft:JSON.parse(JSON.stringify(s.filters))}))]},
+      {label:'Manga details',items:[J('New title',()=>this.openDetails('koi')),J('In progress',()=>this.openDetails('ashen')),J('Source unavailable',()=>this.openDetails('void')),J('Jump to chapter (402 ch.)',()=>{this.openDetails('jade');setTimeout(()=>this.setState({sheet:'jump',jumpVal:''}),30);})]},
+      {label:'Library',items:[J('Library · Grid',L('ok')),J('Library · List',L('ok','list')),J('Library · Empty',L('empty')),J('Library · Error',L('error')),J('Library · Offline',L('offline'))]},
+      {label:'More tabs',items:[J('History',()=>this.go('history')),J('Settings',()=>this.go('settings')),J('Sign-in sheet',()=>{this.go('settings');setTimeout(()=>this.setState({sheet:'signin',signinCtx:null}),20);}),J('Merge after sign-in',()=>{this.go('settings');setTimeout(()=>this.setState({sheet:'merge'}),20);})]},
+      {label:'Reader',items:[J('Webtoon · reading',()=>this.openReader('tower',213,22,{mode:'vertical'})),J('Webtoon · controls',()=>this.openReader('tower',213,22,{mode:'vertical',controls:true})),J('Paged R→L · controls',()=>this.openReader('ashen',112,14,{mode:'rtl',controls:true})),J('Settings sheet',()=>this.openReader('ashen',112,14,{mode:'rtl',controls:true,sheet:'rs'})),J('Transition · webtoon',()=>this.openReader('tower',213,pagesOf('tower',213),{mode:'vertical',at:'div'})),J('Transition · paged',()=>this.openReader('ashen',112,38,{mode:'rtl',at:'trans'})),J('Caught up',()=>this.openReader('tower',214,1,{mode:'vertical',at:'end'})),J('Pages loading',()=>this.openReader('neon',87,30,{mode:'vertical',slow:true})),J('Page failed · retry',()=>this.openReader('quiet',40,9,{mode:'vertical',fail:true}))]}
+    ];
+    v.railPlat=[segR('iOS',ios,()=>this.setState({plat:'ios'})),segR('Android',!ios,()=>this.setState({plat:'android'}))];
+    v.railTheme=[segR('Dark',tk==='dark',()=>this.setState({theme:'dark'})),segR('Light',tk==='light',()=>this.setState({theme:'light'})),segR('OLED',tk==='oled',()=>this.setState({theme:'oled'}))];
+
+    // onboarding
+    v.onbCovers=['tower','ashen','quiet','jade','fox','ember','neon','tea','void'].map((id,i)=>({cover:cover(BY[id].hue),dy:(i%3===1?'-18px':'0px')}));
+    v.onbNext=()=>this.setState({screen:'onb2'});
+    v.onbChips=GENRES.map(g=>{const on=s.onbGenres.includes(g);return {label:g,bg:on?'var(--ac)':'var(--sf)',fg:on?'#fff':'var(--tp)',onClick:()=>this.setState(z=>({onbGenres:on?z.onbGenres.filter(x=>x!==g):[...z.onbGenres,g]}))};});
+    v.onbCta=s.onbGenres.length?`Continue with ${s.onbGenres.length} genre${s.onbGenres.length>1?'s':''}`:'Continue';
+    v.onbDone=()=>this.go('home');
+
+    // home
+    v.srcFilter=s.srcFilter; v.offline=s.homeState==='offline';
+    v.homeLoading=s.homeState==='loading'; v.homeError=s.homeState==='error'; v.homeEmpty=s.homeState==='empty'; v.homeContent=s.homeState==='ok'||s.homeState==='offline';
+    const contIds=[...new Set(s.history.map(h=>h.id))].filter(id=>s.prog[id]&&!s.prog[id].done&&srcOk(id));
+    v.contItems=contIds.slice(0,5).map(id=>{const m=BY[id],pr=s.prog[id],n=pagesOf(id,pr.ch);return {t:m.t,cover:cover(m.hue),sub:`Ch. ${pr.ch} · page ${pr.page} of ${n}`,pct:Math.round(pr.page/n*100)+'%',resume:()=>this.openReader(id,pr.ch,pr.page)};});
+    v.hasContinue=v.contItems.length>0;
+    v.updItems=['jade','ashen','void','ember'].filter(id=>fav(id)&&srcOk(id)).map(card); v.hasUpdated=v.updItems.length>0;
+    const topG=(s.onbGenres[0])||'Romance';
+    v.discover=[['Popular',POP.slice(0,8),'Popularity'],['Latest updates',['ember','void','tower','neon','iron','quiet','grave'],'Latest update'],['New titles',['koi','salt','cloud','fox','tea'],'Latest update'],[`More ${topG}`,MANGA.filter(m=>m.g.includes(topG)).map(m=>m.id),'Popularity']]
+      .map(([title,ids,sort])=>({title,items:ids.filter(srcOk).map(card),seeAll:()=>this.seeAll(sort)})).filter(r=>r.items.length);
+    v.openSourceSheet=()=>this.setState({sheet:'source'});
+    v.openAccount=()=>this.go('settings');
+    v.homeRetry=()=>{ this.setState({homeState:'loading'}); setTimeout(()=>this.setState({homeState:'ok'}),1200); };
+    v.browsePopular=()=>this.seeAll('Popularity');
+    v.goLibrary=()=>this.go('library');
+
+    // search
+    const f=s.filters;
+    const match=m=>{ const q=s.q.trim().toLowerCase(); if(q&&!(m.t.toLowerCase().includes(q)||m.alt.toLowerCase().includes(q)||m.au.toLowerCase().includes(q)||m.g.join(' ').toLowerCase().includes(q)||m.type.toLowerCase().includes(q)||q.split(' ').some(w=>w.length>2&&(m.t.toLowerCase().includes(w)||m.g.join(' ').toLowerCase().includes(w)||m.type.toLowerCase().includes(w))))) return false;
+      if(f.src!=='All'&&m.src!==f.src) return false; if(f.status!=='Any'&&m.status!==f.status) return false; if(f.type!=='Any'&&m.type!==f.type) return false; if(f.inc.some(g=>!m.g.includes(g))) return false; if(f.exc.some(g=>m.g.includes(g))) return false; return s.srcOn[m.src]; };
+    let res=MANGA.filter(match);
+    if(f.sort==='Popularity') res.sort((a,b)=>POP.indexOf(a.id)-POP.indexOf(b.id)); else if(f.sort==='Title') res.sort((a,b)=>a.t.localeCompare(b.t)); else if(f.sort==='Latest update') res.sort((a,b)=>(NEW[b.id]||0)-(NEW[a.id]||0));
+    v.q=s.q; v.hasQ=!!s.q; v.onQ=this.onQ; v.onQKey=this.onQKey; v.clearQ=()=>{ this.setState({q:'',searchPhase:'idle',browse:false}); this.qRef.current&&this.qRef.current.focus({preventScroll:true}); };
+    v.searchIdle=s.searchPhase==='idle'&&!s.browse; v.searchLoading=s.searchPhase==='loading'; v.searchResults=s.searchPhase==='results'||(s.browse&&s.searchPhase!=='loading');
+    v.results=res.map(m=>card(m.id)); v.searchNone=v.searchResults&&!res.length;
+    v.resultLabel=`${res.length} result${res.length===1?'':'s'} · ${f.src==='All'?'all sources':f.src} · ${f.sort}`;
+    v.recents=s.recents.map(r=>({label:r,use:()=>this.setQ(r),remove:()=>this.setState(z=>({recents:z.recents.filter(x=>x!==r)}))})); v.noRecents=!s.recents.length;
+    v.clearRecents=()=>this.setState({recents:[]});
+    const fc=(f.src!=='All')+(f.status!=='Any')+(f.type!=='Any')+f.inc.length+f.exc.length+(f.sort!=='Relevance');
+    v.filterCount=fc; v.hasFilters=fc>0;
+    v.openFilters=()=>this.setState({sheet:'filter',draft:JSON.parse(JSON.stringify(s.filters))});
+    const d0=s.draft||f; const setD=p=>this.setState(z=>({draft:{...(z.draft||z.filters),...p}}));
+    v.filterGroups=[
+      {title:'Source',chips:['All',...SOURCES].map(x=>chip(x,d0.src===x,()=>setD({src:x})))},
+      {title:'Genre',note:'Tap once to include, twice to exclude.',chips:GENRES.map(g=>{const inc=d0.inc.includes(g),exc=d0.exc.includes(g);return {label:g,hasIcon:inc||exc,icon:inc?'check':'block',bg:inc?'var(--tp)':exc?'var(--acs)':'var(--sr)',fg:inc?'var(--bg)':exc?'var(--ac)':'var(--tp)',bd:'0',td:exc?'line-through':'none',onClick:()=>{ if(inc) setD({inc:d0.inc.filter(x=>x!==g),exc:[...d0.exc,g]}); else if(exc) setD({exc:d0.exc.filter(x=>x!==g)}); else setD({inc:[...d0.inc,g]}); }};})},
+      {title:'Status',chips:['Any','Ongoing','Completed','Hiatus'].map(x=>chip(x,d0.status===x,()=>setD({status:x})))},
+      {title:'Type',chips:['Any','Manga','Manhwa','Manhua'].map(x=>chip(x,d0.type===x,()=>setD({type:x})))},
+      {title:'Sort by',chips:['Relevance','Popularity','Latest update','Title'].map(x=>chip(x,d0.sort===x,()=>setD({sort:x})))}
+    ];
+    const dres=MANGA.filter(m=>(d0.src==='All'||m.src===d0.src)&&(d0.status==='Any'||m.status===d0.status)&&(d0.type==='Any'||m.type===d0.type)&&d0.inc.every(g=>m.g.includes(g))&&!d0.exc.some(g=>m.g.includes(g))).length;
+    v.applyLabel=`Show ${dres} title${dres===1?'':'s'}`;
+    v.applyFilters=()=>this.setState(z=>({filters:z.draft||z.filters,draft:null,sheet:null,browse:z.q?z.browse:true,searchPhase:'results'}));
+    v.resetFilters=()=>this.setState({draft:{src:'All',inc:[],exc:[],status:'Any',type:'Any',sort:'Relevance'},filters:s.sheet==='filter'?s.filters:{src:'All',inc:[],exc:[],status:'Any',type:'Any',sort:'Relevance'}});
+
+    // details
+    const dm=BY[s.detailId], dpr=s.prog[dm.id], hue=dm.hue;
+    const coverAccent=(this.props.accentMode||'Fixed red')==='From cover';
+    const srcList=[dm.src,...dm.also];
+    const down=dm.id==='void'&&s.detailSrc==='AsuraScans';
+    const chs=[]; for(let i=0;i<dm.latest;i++){ const n=s.chDesc?dm.latest-i:i+1; const read=this.isRead(dm.id,n), cur=dpr&&!dpr.done&&n===dpr.ch; const np=pagesOf(dm.id,n);
+      chs.push({n,label:`Ch. ${n}`,sub:`${chTitle(n)} · ${chDate(dm,n)}`,isNew:fav(dm.id)&&NEW[dm.id]&&n>dm.latest-NEW[dm.id],current:cur,pct:cur?Math.round(dpr.page/np*100)+'%':'0%',pageLabel:cur?`p. ${dpr.page}/${np}`:'',op:read&&!cur?'0.45':'1',
+        icon:cur?'bookmark':read?'check_circle':'',iconColor:cur?'var(--ac)':'var(--ts)',bg:s.flashCh===n?'var(--acs)':cur?'var(--sf)':'transparent',
+        open:()=>{ if(this.rowLP){ this.rowLP=false; return; } this.openReader(dm.id,n,cur?dpr.page:1); },
+        down:()=>{ this.rowLP=false; clearTimeout(this.rowT); this.rowT=setTimeout(()=>{ this.rowLP=true; this.setState({sheet:'chAction',sheetData:n}); },500); },
+        up:()=>clearTimeout(this.rowT), ctx:(e)=>{ e.preventDefault(); clearTimeout(this.rowT); this.rowLP=true; this.setState({sheet:'chAction',sheetData:n}); }}); }
+    v.d={t:dm.t,au:dm.au,meta:`${dm.type} · ${dm.status} · ${s.detailSrc}`,alt:dm.alt,altIcon:s.altOpen?'expand_less':'expand_more',genres:dm.g,cover:cover(hue),
+      headerBg:light?`linear-gradient(180deg, oklch(0.9 0.05 ${hue}) 0%, var(--bg) 100%)`:`linear-gradient(180deg, oklch(0.34 0.07 ${hue}) 0%, var(--bg) 100%)`,
+      btnBg:coverAccent?`oklch(0.58 0.14 ${hue})`:'var(--ac)',
+      primaryLabel:dpr?(dpr.done?'Read again from Ch. 1':`Continue Ch. ${dpr.ch}`):'Read Ch. 1',primarySub:dpr?(dpr.done?`Finished · ${dm.latest} chapters`:`Page ${dpr.page} of ${pagesOf(dm.id,dpr.ch)}`):`${dm.latest} chapters available`,
+      primary:()=>dpr&&!dpr.done?this.openReader(dm.id,dpr.ch,dpr.page):this.openReader(dm.id,1,1),
+      favColor:fav(dm.id)?'var(--ac)':'var(--tp)',favFill:IC(fav(dm.id)),favLabel:fav(dm.id)?'In Library':'Favorite',toggleFav:()=>this.toggleFav(dm.id),
+      openWeb:()=>this.toastMsg(`Opening ${s.detailSrc} in browser…`),srcName:s.detailSrc,
+      syn:dm.syn,clamp:s.synMore?'99':'4',synBtn:s.synMore?'Less':'More',
+      hasAlso:srcList.length>1,sources:srcList.map(x=>({label:x,sub:x===dm.src?`${dm.latest} ch.`:`${dm.latest-((x.length*3)%7)} ch.`,bg:x===s.detailSrc?'var(--sr)':'transparent',onClick:()=>{ this.setState({detailSrc:x}); if(x!==s.detailSrc) this.toastMsg(`Reading from ${x} · progress kept`); }})),
+      srcDown:down,otherSrc:dm.also[0]||'',tryOther:()=>{ this.setState({detailSrc:dm.also[0]}); this.toastMsg(`Switched to ${dm.also[0]} · progress kept`); },
+      chCount:`${dm.latest} chapters`,sortLabel:s.chDesc?'Newest':'Oldest',chapters:chs};
+    v.altOpen=s.altOpen; v.toggleAlt=()=>this.setState({altOpen:!s.altOpen}); v.toggleSyn=()=>this.setState({synMore:!s.synMore});
+    v.toggleChSort=()=>this.setState({chDesc:!s.chDesc}); v.openJump=()=>this.setState({sheet:'jump',jumpVal:''});
+    v.closeDetails=()=>this.base({screen:s.tab});
+    v.shareToast=()=>this.toastMsg('Share sheet opens here');
+    v.jumpVal=s.jumpVal; v.jumpPh=`1 – ${dm.latest}`; v.onJumpInput=(e)=>this.setState({jumpVal:e.target.value.replace(/\D/g,'')}); v.jumpGo=()=>this.jumpTo(+s.jumpVal||1);
+    const bs=dm.latest>200?50:dm.latest>60?20:10; v.jumpBuckets=[]; for(let a=1;a<=dm.latest&&v.jumpBuckets.length<12;a+=bs){ const b=Math.min(dm.latest,a+bs-1); v.jumpBuckets.push({label:`${a}–${b}`,onClick:()=>this.jumpTo(s.chDesc?b:a)}); }
+
+    // library
+    const cats=['All','Reading','Plan to read','Completed'];
+    let lib=s.favs.filter(id=>(s.libCat==='All'||CAT[id]===s.libCat)&&(s.libSrc==='All'||BY[id].src===s.libSrc));
+    if(s.libUnread) lib=lib.filter(id=>card(id).unread>0);
+    const hIdx=id=>{const i=s.history.findIndex(h=>h.id===id);return i<0?99:i;};
+    if(s.libSort==='Last read') lib.sort((a,b)=>hIdx(a)-hIdx(b)); else if(s.libSort==='Title') lib.sort((a,b)=>BY[a].t.localeCompare(BY[b].t)); else if(s.libSort==='Last updated') lib.sort((a,b)=>(NEW[b]||0)-(NEW[a]||0)); else lib.reverse();
+    v.libCats=cats.map(c=>{const on=s.libCat===c;return {label:c,count:c==='All'?s.favs.length:s.favs.filter(id=>CAT[id]===c).length,fg:on?'var(--tp)':'var(--ts)',line:on?'var(--ac)':'transparent',onClick:()=>this.setState({libCat:c})};});
+    const ls=s.libState; v.libOffline=ls==='offline'; v.libLoading=ls==='loading'; v.libError=ls==='error';
+    const libOk=ls==='ok'||ls==='offline';
+    v.libEmpty=ls==='empty'||(libOk&&!lib.length); v.libEmptyTitle=ls==='empty'||!s.favs.length?'Your library is empty':'Nothing here yet';
+    v.libItems=ls==='empty'?[]:lib.map(card); v.libIsGrid=s.libView==='grid';
+    v.libShowGrid=libOk&&lib.length>0&&s.libView==='grid'; v.libShowList=libOk&&lib.length>0&&s.libView==='list';
+    v.libGrid=`repeat(${s.libCols}, minmax(0,1fr))`; v.libTitleSize=s.libCols===4?'11px':s.libCols===3?'13px':'15px';
+    v.colOpts=[2,3,4].map(n=>seg(String(n),s.libCols===n,()=>this.setState({libCols:n})));
+    v.libViewIcon=s.libView==='grid'?'view_list':'grid_view'; v.toggleLibView=()=>this.setState({libView:s.libView==='grid'?'list':'grid'});
+    v.libSort=s.libSort; v.libUnread=s.libUnread; v.openLibSort=()=>this.setState({sheet:'libSort'});
+    v.libRetry=()=>{ this.setState({libState:'loading'}); setTimeout(()=>this.setState({libState:'ok'}),1200); };
+    v.syncIcon=ls==='offline'?'cloud_off':s.signedIn?'cloud_done':'phone_iphone'; v.syncLabel=ls==='offline'?'Waiting to sync':s.signedIn?'Synced just now':'On this device';
+    v.syncTap=()=>{ if(!s.signedIn) this.setState({sheet:'signin',signinCtx:null}); };
+
+    // history
+    const days=['Today','Yesterday','This week','Earlier'];
+    v.histGroups=days.map(dl=>({label:dl,rows:s.history.filter(h=>h.day===dl).map(h=>{const m=BY[h.id],n=pagesOf(h.id,h.ch),dx=s.swKey===h.key?s.swDx:0;return {t:m.t,cover:cover(m.hue),sub:`Ch. ${h.ch} · page ${h.page} of ${n}`,time:h.time,
+      tx:`translateX(${dx}px)`,tr:s.swKey===h.key?'none':'transform .2s',
+      open:()=>this.openDetails(h.id),resume:()=>this.openReader(h.id,h.ch,h.page),
+      down:(e)=>{ this.sw={key:h.key,x:e.clientX}; try{e.currentTarget.setPointerCapture(e.pointerId);}catch(_){} },
+      move:(e)=>{ if(this.sw&&this.sw.key===h.key){ const dx2=Math.min(0,e.clientX-this.sw.x); if(dx2<-6) this.setState({swKey:h.key,swDx:dx2}); } },
+      up:()=>{ if(!this.sw) return; const rm=this.state.swKey===h.key&&this.state.swDx<-90; this.sw=null; if(rm){ const prev=this.state.history; this.setState({history:prev.filter(x=>x.key!==h.key),swKey:null,swDx:0}); this.toastMsg('Removed from history',()=>this.setState({history:prev})); } else this.setState({swKey:null,swDx:0}); }};})})).filter(g=>g.rows.length);
+    v.histEmpty=!s.history.length; v.histHasRows=!!s.history.length;
+    v.openClearHist=()=>this.setState({sheet:'clearHist'});
+
+    // settings
+    v.avatarBg=s.signedIn?'oklch(0.55 0.12 28)':'var(--sr)'; v.avatarText=s.signedIn?'J':'?';
+    v.accTitle=s.signedIn?'Jeremie':'Not signed in'; v.accSub=s.signedIn?'Apple ID · synced 2 min ago':'Favorites and progress stay on this phone';
+    v.accBtn=s.signedIn?'Sign out':'Sign in'; v.accBtnBg=s.signedIn?'var(--sr)':'var(--ac)'; v.accBtnFg=s.signedIn?'var(--tp)':'#fff';
+    v.accAction=()=>{ if(s.signedIn){ this.setState({signedIn:false}); this.toastMsg('Signed out · local data kept'); } else this.setState({sheet:'signin',signinCtx:null}); };
+    v.themeOpts=[['dark','Dark'],['light','Light'],['oled','OLED Black']].map(([k,l])=>seg(l,tk===k,()=>this.setState({theme:k})));
+    const tgl=(on,fn)=>({isToggle:true,chev:false,value:'',track:on?'var(--ac)':'var(--sk2)',knob:on?'21px':'3px',onClick:fn});
+    const row=(icon,label,o)=>({icon,label,color:'var(--tp)',valueColor:'var(--ts)',value:'',isToggle:false,chev:false,track:'',knob:'',...o});
+    const cyc=(arr,cur)=>arr[(arr.indexOf(cur)+1)%arr.length];
+    const secs=[
+      {title:'Library',rows:[row('grid_view','Grid columns',{value:String(s.libCols),onClick:()=>this.setState({libCols:cyc([2,3,4],s.libCols)})}),row('view_list','Default view',{value:s.libView==='grid'?'Grid':'List',onClick:()=>this.setState({libView:s.libView==='grid'?'list':'grid'})})]},
+      {title:'Reader defaults',rows:[row('auto_stories','Reading mode',{value:s.readerDefault==='Auto'?'By title type':MODE_NAME[s.readerDefault],onClick:()=>this.setState({readerDefault:cyc(['Auto','vertical','rtl','ltr','pagedV'],s.readerDefault)})}),row('contrast','Background',{value:s.rBg,onClick:()=>this.setState({rBg:cyc(Object.keys(RBG),s.rBg)})}),row('fit_screen','Fit',{value:s.fit,onClick:()=>this.setState({fit:cyc(['Width','Height','Screen','Original'],s.fit)})}),row('light_mode','Keep screen on',tgl(s.keepOn,()=>this.setState({keepOn:!s.keepOn}))),row('pin','Show page number',tgl(s.showNum,()=>this.setState({showNum:!s.showNum}))),row('swap_horiz','Invert tap zones',tgl(s.invert,()=>this.setState({invert:!s.invert})))]},
+      {title:'Sources',rows:SOURCES.map(x=>row('drag_indicator',x,{...tgl(s.srcOn[x],()=>this.setState({srcOn:{...s.srcOn,[x]:!s.srcOn[x]}})),value:x==='AsuraScans'?'Unstable':'',valueColor:'var(--wn)'}))},
+      {title:'Data',rows:[row('photo_library','Image cache',{value:s.cache,onClick:()=>{ this.setState({cache:'0 MB'}); this.toastMsg('Cache cleared'); }}),row('download','Prefetch pages',{value:String(s.prefetch),onClick:()=>this.setState({prefetch:cyc([3,5,8,10],s.prefetch)})}),row('signal_cellular_alt','Data saver on cellular',tgl(s.dataSaver,()=>this.setState({dataSaver:!s.dataSaver})))]},
+      {title:'About',rows:[row('chat','Send feedback',{chev:true,onClick:()=>this.toastMsg('Opens feedback form')}),row('description','Open-source licenses',{chev:true,onClick:()=>{}}),row('info','Version',{value:'1.0 (214)',onClick:()=>{}})]}
+    ];
+    secs.forEach(sec=>sec.rows.forEach((r,i)=>r.border=i?'0.5px solid var(--ln)':'none'));
+    v.setSections=secs;
+
+    // sheets
+    const sh=s.sheet;
+    v.anySheet=!!sh; v.closeSheet=()=>this.setState({sheet:null,draft:null}); v.scrimBg=sh==='rs'?'transparent':'rgba(0,0,0,0.45)';
+    v.shFilter=sh==='filter'; v.shSignin=sh==='signin'; v.shMerge=sh==='merge'; v.shJump=sh==='jump'; v.shRS=sh==='rs';
+    v.signinTitle=s.signinCtx==='fav'?'Saved to this phone. Sync it everywhere?':'Sign in to Mangavault';
+    v.appleBg=light?'#000':'#fff'; v.appleFg=light?'#fff':'#000';
+    v.signApple=()=>this.setState({sheet:'merge'}); v.signGoogle=()=>this.setState({sheet:'merge'});
+    v.mergeRows=[['Favorites',`${s.favs.length} titles`],['Reading progress',`${Object.keys(s.prog).length} titles`],['History',`${s.history.length} entries`]].map(([label,value],i)=>({label,value,border:i?'0.5px solid var(--ln)':'none'}));
+    v.doMerge=()=>{ this.setState({signedIn:true,sheet:null}); this.toastMsg('Signed in · library merged and synced'); };
+    v.skipMerge=()=>{ this.setState({signedIn:true,sheet:null}); this.toastMsg('Signed in'); };
+    // generic list sheets
+    const LI=(icon,label,onClick,o)=>({icon,label,onClick,sub:'',check:'',bg:'transparent',color:'var(--tp)',iconColor:'var(--ts)',weight:'500',...o});
+    let list=null;
+    if(sh==='source') list={title:'Show titles from',items:['All sources',...SOURCES].map(x=>LI(x==='All sources'?'apps':'public',x,()=>this.setState({srcFilter:x,sheet:null}),{check:s.srcFilter===x?'check':''}))};
+    if(sh==='libSort') list={title:'Sort and filter',items:[...['Last read','Last updated','Title','Date added'].map(x=>LI('sort',x,()=>this.setState({libSort:x}),{check:s.libSort===x?'check':''})),LI('mark_email_unread','Unread only',()=>this.setState({libUnread:!s.libUnread}),{check:s.libUnread?'check':''}),...['All','MangaDex','MangaPill','AsuraScans','WeebCentral'].map(x=>LI('public',x==='All'?'Any source':x,()=>this.setState({libSrc:x}),{check:s.libSrc===x?'check':'',sub:x==='All'?'Source':''}))]};
+    if(sh==='chAction'){ const n=s.sheetData, rd=this.isRead(dm.id,n); list={title:`Ch. ${n} · ${chTitle(n)}`,items:[LI('play_arrow','Read from start',()=>{ this.setState({sheet:null}); this.openReader(dm.id,n,1); }),LI(rd?'remove_done':'done',rd?'Mark as unread':'Mark as read',()=>this.setState({sheet:null,readOv:{...s.readOv,[dm.id+'-'+n]:!rd}})),LI('done_all','Mark all previous as read',()=>{ const o={...s.readOv}; for(let i=1;i<=n;i++) o[dm.id+'-'+i]=true; this.setState({sheet:null,readOv:o}); this.toastMsg(`Chapters 1–${n} marked read`,()=>this.setState({readOv:s.readOv})); })]}; }
+    if(sh==='clearHist') list={title:'History',items:[LI('delete_sweep','Clear all history',()=>{ const prev=s.history; this.setState({history:[],sheet:null}); this.toastMsg('History cleared',()=>this.setState({history:prev})); },{color:'var(--ac)',iconColor:'var(--ac)'}),LI('close','Cancel',()=>this.setState({sheet:null}))]};
+    if(sh==='pageMenu') list={title:`Page ${s.rPage}`,items:[LI('download','Save image',()=>{ this.setState({sheet:null}); this.toastMsg('Saved to Photos'); }),LI(ios?'ios_share':'share','Share page',()=>{ this.setState({sheet:null}); this.toastMsg('Share sheet opens here'); }),LI('refresh','Reload page',()=>{ this.setState({sheet:null}); this.retry(`${s.rCh}-${s.rPage}`); })]};
+    if(sh==='chapters'&&s.r){ const rm=BY[s.r.id]; const items=[]; for(let n=rm.latest;n>=1;n--){ const cur=n===s.rCh; items.push(LI(cur?'play_circle':this.isRead(rm.id,n)?'check_circle':'radio_button_unchecked',`Ch. ${n}`,()=>{ this.setState({sheet:null}); this.openReader(rm.id,n,1,{controls:true}); },{sub:`${chTitle(n)} · ${chDate(rm,n)}`,bg:cur?'var(--acs)':'transparent',iconColor:cur?'var(--ac)':'var(--ts)',weight:cur?'700':'500'})); } list={title:rm.t,sub:`${rm.latest} chapters · ${rm.src}`,items}; }
+    v.shList=!!list; v.listTitle=list?list.title:''; v.listSub=list&&list.sub?list.sub:''; v.listItems=list?list.items:[]; v.listMaxH=sh==='chapters'?'72%':'80%';
+
+    // reader
+    if(s.r){ const r=s.r, m=BY[r.id], mode=s.mode, lb=s.rBg==='White'||s.rBg==='Sepia';
+      v.rBgColor=RBG[s.rBg]; v.rFg=lb?'#1A1A1E':'#E6E6EA'; v.rFg2=lb?'#5C5C66':'#8E8E98'; v.rCard=lb?'rgba(0,0,0,0.06)':'rgba(255,255,255,0.07)';
+      v.rSk=lb?(s.rBg==='Sepia'?'#E6DAC1':'#ECECEF'):'#141417'; v.rSk2=lb?(s.rBg==='Sepia'?'#F1E6CF':'#F7F7F9'):'#22222A';
+      v.rVertical=mode==='vertical'; v.rPaged=mode!=='vertical';
+      const W=ios?393:412, st=k=>this.loaded[k]||'loading';
+      if(mode==='vertical'){ const gap=s.gap?8:0; const items=[]; let y=0; const last=Math.min(r.latest,Math.max(s.maxCh,s.rCh+1));
+        for(let c=r.start;c<=last;c++){ const n=pagesOf(r.id,c); for(let p=1;p<=n;p++){ const h=Math.round(W*(1.2+((c*31+p*17)%9)/10)); const k=`${c}-${p}`, ss=st(k);
+            items.push({type:'page',c,p,n,y,isPage:true,hpx:h+'px',ok:ss==='ok',loading:ss==='loading',fail:ss==='fail',bg:webPage(m.hue,c,p),label:`CH.${c} · P.${p} — PAGE IMAGE`,aria:`Page ${p} of ${n}`,failLabel:`Page ${p} didn't load`,retry:(e)=>{ e.stopPropagation(); this.retry(k); }}); y+=h+gap; }
+          if(c<r.latest){ items.push({type:'div',isDiv:true,c,n,y,endLabel:`End of Ch. ${c}`,nextLabel:`Next: Ch. ${c+1} · ${chTitle(c+1)}`}); y+=140; } else { items.push({type:'end',isEnd:true,c,n,y}); y+=560; } }
+        this.vItems=items; v.vItems=items; v.vGap=gap+'px'; v.pg={};
+      } else { const seq=this.seqFor(r); const it=seq[s.pIdx]||seq[0]; const k=`${it.c}-${it.p}`, ss=st(k);
+        const fit={Width:['100%','auto','2 / 3'],Height:['auto','100%','2 / 3'],Screen:['100%','100%','auto'],Original:['82%','auto','2 / 3']}[s.fit];
+        v.pg={isPage:it.type==='page',isTrans:it.type==='trans',isEnd:it.type==='end',ok:ss==='ok',loading:ss==='loading',fail:ss==='fail',w:fit[0],h:fit[1],ar:fit[2],bg:paper(it.p||1),label:`CH.${it.c} · P.${it.p} — PAGE IMAGE`,aria:`Page ${it.p} of ${it.n}`,failLabel:`Page ${it.p} didn't load`,retry:(e)=>{ e.stopPropagation(); this.retry(k); },
+          from:`Ch. ${it.c} · ${chTitle(it.c)}`,next:`Ch. ${it.c+1} · ${chTitle(it.c+1)}`,hint:mode==='rtl'?'Tap the left edge or swipe to continue':mode==='ltr'?'Tap the right edge or swipe to continue':'Swipe up to continue'};
+        v.vItems=[]; v.vGap='0px'; }
+      v.zoomT=s.zoom?'scale(2.2)':'none'; v.zoomO=s.zoom?`${s.zoom.x}% ${s.zoom.y}%`:'50% 50%';
+      v.rPages=pagesOf(r.id,s.rCh); v.rPage=s.rPage; v.rPageLabel=`${s.rPage} / ${v.rPages}`; v.progW=Math.round(s.rPage/v.rPages*100)+'%';
+      v.rTitle=m.t; v.rChTitle=`Ch. ${s.rCh} · ${chTitle(s.rCh)}`;
+      v.ctrlOp=s.controls?1:0; v.ctrlPE=s.controls?'auto':'none';
+      v.showThinProgress=!s.controls; v.showPagePill=!s.controls&&s.showNum;
+      v.dimOp=s.dim?((100-s.bright)/100*0.8).toFixed(2):0;
+      v.sliderDir=mode==='rtl'?'rtl':'ltr'; v.dragging=s.dragging; v.dragP=s.dragP;
+      const tp=v.rPages>1?(s.dragP-1)/(v.rPages-1):0; v.thumbLeft=`calc(64px + ${(mode==='rtl'?1-tp:tp)} * (100% - 76px))`; v.thumbBg=mode==='vertical'?webPage(m.hue,s.rCh,s.dragP):paper(s.dragP);
+      v.prevLabel=s.rCh>1?`Ch. ${s.rCh-1}`:'First'; v.nextLabel=s.rCh<r.latest?`Ch. ${s.rCh+1}`:'Latest'; v.prevOp=s.rCh>1?1:0.4; v.nextOp=s.rCh<r.latest?1:0.4;
+      v.prevCh=()=>{ if(s.rCh>1) this.openReader(r.id,s.rCh-1,1,{controls:true}); };
+      v.nextCh=()=>{ if(s.rCh<r.latest) this.openReader(r.id,s.rCh+1,1,{controls:true}); };
+      v.endSub=`Ch. ${r.latest} is the latest on ${m.src}. We'll badge it in your Library when the next one lands.`;
+      v.endShowFav=!fav(r.id); v.endFav=(e)=>{ e.stopPropagation(); this.toggleFav(r.id); };
+      v.endBack=(e)=>{ e.stopPropagation(); this.openDetails(r.id); };
+      v.moreItems=[[ios?'ios_share':'share','Share chapter',()=>this.toastMsg('Share sheet opens here')],['open_in_new',`Open on ${m.src}`,()=>this.toastMsg(`Opening ${m.src}…`)],['flag','Report broken page',()=>this.toastMsg('Thanks, we flagged this page')]].map(([icon,label,fn],i)=>({icon,label,border:i?'0.5px solid rgba(255,255,255,0.08)':'none',onClick:()=>{ this.setState({more:false}); fn(); }}));
+      v.modeOpts=MODES.map(([k,l,i])=>({label:l,icon:i,bg:mode===k?'var(--acs)':'var(--sr)',bd:mode===k?'1.5px solid var(--ac)':'1.5px solid transparent',onClick:()=>{ const patch={mode:k,modes:{...s.modes,[r.id]:k},zoom:null}; if(k!=='vertical'){ const seq=this.seqFor(r); patch.pIdx=Math.max(0,seq.findIndex(x=>x.type==='page'&&x.c===s.rCh&&x.p===s.rPage)); } this.setState(patch,()=>{ if(k==='vertical') requestAnimationFrame(()=>this.scrollV(s.rCh,s.rPage)); }); }}));
+      v.bgOpts=Object.keys(RBG).map(k=>({label:k,color:RBG[k],ring:s.rBg===k?'0 0 0 2px var(--sf), 0 0 0 4px var(--ac)':'inset 0 0 0 1px rgba(128,128,128,0.4)',onClick:()=>this.setState({rBg:k})}));
+      v.fitOpts=['Width','Height','Screen','Original'].map(x=>seg(x,s.fit===x,()=>this.setState({fit:x})));
+      v.bright=s.bright; v.onBright=(e)=>this.setState({bright:+e.target.value});
+      v.rsToggles=[['Page gap (webtoon)',s.gap,'gap'],['Dim overlay',s.dim,'dim'],['Keep screen on',s.keepOn,'keepOn'],['Show page number',s.showNum,'showNum'],['Invert tap zones',s.invert,'invert']].map(([label,on,key],i)=>({label,border:i?'0.5px solid var(--ln)':'none',track:on?'var(--ac)':'var(--sk2)',knob:on?'21px':'3px',onClick:()=>this.setState({[key]:!on})}));
+    } else { v.vItems=[]; v.pg={}; }
+    v.onVScroll=this.onVScroll; v.onRClick=this.onRClick; v.onRDown=this.onRDown; v.onRMove=this.onRMove; v.onRUp=this.onRUp; v.onRCtx=this.onRCtx; v.onSlide=this.onSlide;
+    v.slideDown=()=>this.setState({dragging:true,dragP:s.rPage}); v.slideUp=()=>this.setState({dragging:false});
+    v.more=s.more; v.toggleMore=()=>this.setState({more:!s.more}); v.openChList=()=>this.setState({sheet:'chapters',more:false}); v.openRS=()=>this.setState({sheet:'rs',more:false});
+    v.closeReader=()=>this.base({screen:s.prevScreen&&s.prevScreen!=='reader'?s.prevScreen:'details',controls:false});
+    v.openSignin=()=>this.setState({sheet:'signin',signinCtx:null});
+
+    // chrome
+    v.toast=s.toast; v.hasToastAction=!!this.undoFn; v.toastAction=()=>{ const f2=this.undoFn; this.undoFn=null; this.setState({toast:null}); f2&&f2(); };
+    v.toastBottom=sc==='reader'?'150px':tabScreens.includes(sc)?`calc(var(--tabh) + 12px)`:'40px';
+    v.statusVisible=sc!=='reader'||s.controls;
+    v.statusColor=sc==='reader'?'#F2F2F5':(sc==='details'&&!light)?'#F2F2F5':light?'#121216':'#F2F2F5';
+    v.stPad=ios?'32px':'20px'; v.stSize=ios?'16px':'14px'; v.wifiIcon=ios?'wifi':'network_wifi'; v.batIcon=ios?'battery_full':'battery_5_bar';
+    v.hiW=ios?'134px':'108px'; v.hiColor=sc==='reader'?'rgba(255,255,255,0.5)':light?'#121216':'rgba(255,255,255,0.85)';
+    return v;
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+config.env
+.env
+*.local.xcconfig
+local.properties
+.wrangler/
+backend/target/
+backend/wrangler.local.toml
+node_modules/
+.DS_Store
+wrangler.deploy.toml
+.dev.vars

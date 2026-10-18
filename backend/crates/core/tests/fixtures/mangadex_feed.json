@@ -1,0 +1,5 @@
+{"result":"ok","data":[
+ {"id":"ch1","attributes":{"chapter":"1","title":"","volume":"1","pages":60,"externalUrl":null,"publishAt":"2023-09-17T15:00:00+00:00"},"relationships":[]},
+ {"id":"ch2","attributes":{"chapter":"2","title":"Second","volume":null,"pages":20,"externalUrl":null,"publishAt":"2023-09-24T15:00:00+00:00"},"relationships":[{"id":"g","type":"scanlation_group","attributes":{"name":"TCB"}}]},
+ {"id":"ch3","attributes":{"chapter":"3","title":"","pages":0,"externalUrl":"https://mangaplus.shueisha.co.jp/viewer/1","publishAt":"2023-10-01T15:00:00+00:00"},"relationships":[]}
+],"limit":500,"offset":0,"total":3}
