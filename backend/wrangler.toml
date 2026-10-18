@@ -6,7 +6,7 @@ compatibility_date = "2026-10-01"
 workers_dev = false
 
 [build]
-command = "cd crates/worker && worker-build --release"
+command = "bash scripts/build.sh"
 
 [[d1_databases]]
 binding = "DB"

@@ -59,6 +59,6 @@ In the Worker's Settings > Build:
 | Build variables | `API_DOMAIN` and `D1_DATABASE_ID` |
 | Non-production branch builds | off |
 
-The Worker's name in the dashboard must match `name` in `wrangler.toml` (`mangavault`). The deploy script installs Rust and worker-build in the build image, so the first build takes a few minutes.
+The Worker's name in the dashboard must match `name` in `wrangler.toml` (`mangavault`). `scripts/build.sh` (wrangler's build step) installs Rust and worker-build in the build image, so the first build takes a few minutes.
 
 The default crawl budgets assume the Workers Paid plan. On the Free plan (50 subrequests and 50 D1 queries per invocation), set `CRAWL_REFRESH_BUDGET` to about 2 and `CRAWL_POPULAR_PAGES` to 1.

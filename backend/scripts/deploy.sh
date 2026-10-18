@@ -20,18 +20,6 @@ fi
 : "${API_DOMAIN:?set API_DOMAIN (build variable or config.env)}"
 : "${D1_DATABASE_ID:?set D1_DATABASE_ID (build variable or config.env)}"
 
-# In Cloudflare Workers Builds (WORKERS_CI) or other CI, install the Rust
-# toolchain and worker-build when missing. Locally, install them yourself.
-[[ -f "$HOME/.cargo/env" ]] && source "$HOME/.cargo/env"
-if [[ -n "${WORKERS_CI:-}${CI:-}" ]]; then
-  if ! command -v cargo >/dev/null; then
-    curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
-    source "$HOME/.cargo/env"
-  fi
-  rustup target add wasm32-unknown-unknown
-  command -v worker-build >/dev/null || cargo install worker-build@0.8.7 --locked
-fi
-
 # A throwaway config with the real database id; never committed.
 GENERATED="wrangler.deploy.toml"
 trap 'rm -f "$GENERATED"' EXIT
