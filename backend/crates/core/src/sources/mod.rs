@@ -2,7 +2,6 @@
 //! a [`SourceId`] variant, and its arms in the dispatch methods below.
 
 pub mod asurascans;
-pub mod comichubfree;
 pub mod mangadex;
 pub mod mangapill;
 pub mod mgeko;
@@ -18,18 +17,16 @@ pub enum SourceId {
     AsuraScans,
     MgEko,
     Webtoons,
-    ComicHubFree,
     Tapas,
 }
 
 impl SourceId {
-    pub const ALL: [SourceId; 7] = [
+    pub const ALL: [SourceId; 6] = [
         SourceId::MangaDex,
         SourceId::MangaPill,
         SourceId::AsuraScans,
         SourceId::MgEko,
         SourceId::Webtoons,
-        SourceId::ComicHubFree,
         SourceId::Tapas,
     ];
 
@@ -40,7 +37,6 @@ impl SourceId {
             SourceId::AsuraScans => "asurascans",
             SourceId::MgEko => "mgeko",
             SourceId::Webtoons => "webtoons",
-            SourceId::ComicHubFree => "comichubfree",
             SourceId::Tapas => "tapas",
         }
     }
@@ -56,7 +52,6 @@ impl SourceId {
             SourceId::AsuraScans => "AsuraScans",
             SourceId::MgEko => "MgEko",
             SourceId::Webtoons => "Webtoons",
-            SourceId::ComicHubFree => "ComicHubFree",
             SourceId::Tapas => "Tapas",
         }
     }
@@ -68,9 +63,6 @@ impl SourceId {
             // The image CDN (pstatic.net) rejects requests without it.
             SourceId::Webtoons => &[("Referer", "http://m.webtoons.com/")],
             SourceId::Tapas => &[("Referer", "https://m.tapas.io/")],
-            // Without it, pages and covers come back as a "COMIC HUB FREE"
-            // placeholder image.
-            SourceId::ComicHubFree => &[("Referer", "https://comichubfree.com/")],
             SourceId::MangaDex | SourceId::AsuraScans | SourceId::MgEko => &[],
         }
     }
@@ -78,39 +70,15 @@ impl SourceId {
     /// Which site should serve a chapter when several have it. Scanlation
     /// sites first for Korean/Chinese series (faster releases, full-width
     /// strips); MangaDex first for Japanese manga (official-quality scans).
-    /// ComicHubFree first for western comics, which the others rarely carry.
     /// Webtoons and Tapas come last: they number episodes their own way and
     /// paywall some, so they serve mainly the series only they carry.
-    pub fn preference(kind: Option<Kind>) -> [SourceId; 7] {
+    pub fn preference(kind: Option<Kind>) -> [SourceId; 6] {
         use SourceId::*;
         match kind {
-            Some(Kind::Manhwa) | Some(Kind::Manhua) => [
-                AsuraScans,
-                MgEko,
-                MangaDex,
-                MangaPill,
-                Webtoons,
-                Tapas,
-                ComicHubFree,
-            ],
-            Some(Kind::Comic) => [
-                ComicHubFree,
-                MangaDex,
-                MangaPill,
-                MgEko,
-                AsuraScans,
-                Tapas,
-                Webtoons,
-            ],
-            _ => [
-                MangaDex,
-                MangaPill,
-                MgEko,
-                AsuraScans,
-                ComicHubFree,
-                Webtoons,
-                Tapas,
-            ],
+            Some(Kind::Manhwa) | Some(Kind::Manhua) => {
+                [AsuraScans, MgEko, MangaDex, MangaPill, Webtoons, Tapas]
+            }
+            _ => [MangaDex, MangaPill, MgEko, AsuraScans, Webtoons, Tapas],
         }
     }
 
@@ -121,7 +89,6 @@ impl SourceId {
             SourceId::AsuraScans => asurascans::popular(http, page).await,
             SourceId::MgEko => mgeko::popular(http, page).await,
             SourceId::Webtoons => webtoons::popular(http, page).await,
-            SourceId::ComicHubFree => comichubfree::popular(http, page).await,
             SourceId::Tapas => tapas::popular(http, page).await,
         }
     }
@@ -133,7 +100,6 @@ impl SourceId {
             SourceId::AsuraScans => asurascans::latest(http, page).await,
             SourceId::MgEko => mgeko::latest(http, page).await,
             SourceId::Webtoons => webtoons::latest(http, page).await,
-            SourceId::ComicHubFree => comichubfree::latest(http, page).await,
             SourceId::Tapas => tapas::latest(http, page).await,
         }
     }
@@ -145,7 +111,6 @@ impl SourceId {
             SourceId::AsuraScans => asurascans::search(http, query, page).await,
             SourceId::MgEko => mgeko::search(http, query, page).await,
             SourceId::Webtoons => webtoons::search(http, query, page).await,
-            SourceId::ComicHubFree => comichubfree::search(http, query, page).await,
             SourceId::Tapas => tapas::search(http, query, page).await,
         }
     }
@@ -158,7 +123,6 @@ impl SourceId {
             SourceId::AsuraScans => asurascans::series(http, source_id).await,
             SourceId::MgEko => mgeko::series(http, source_id).await,
             SourceId::Webtoons => webtoons::series(http, source_id).await,
-            SourceId::ComicHubFree => comichubfree::series(http, source_id).await,
             SourceId::Tapas => tapas::series(http, source_id).await,
         }
     }
@@ -170,7 +134,6 @@ impl SourceId {
             SourceId::AsuraScans => asurascans::pages(http, chapter_id).await,
             SourceId::MgEko => mgeko::pages(http, chapter_id).await,
             SourceId::Webtoons => webtoons::pages(http, chapter_id).await,
-            SourceId::ComicHubFree => comichubfree::pages(http, chapter_id).await,
             SourceId::Tapas => tapas::pages(http, chapter_id).await,
         }
     }
