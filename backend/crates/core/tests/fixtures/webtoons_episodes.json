@@ -1,0 +1,5 @@
+{"success":true,"result":{"episodeList":[
+ {"episodeNo":1,"episodeTitle":"[Season 1] Ep. 0","viewerLink":"/en/fantasy/tower-of-god/season-1-ep-0/viewer?title_no=95&episode_no=1","exposureDateMillis":1404216000000,"displayUp":false,"hasBgm":false},
+ {"episodeNo":2,"episodeTitle":"[Season 1] Ep. 1 - 1F.Headon's Floor","viewerLink":"/en/fantasy/tower-of-god/season-1-ep-1/viewer?title_no=95&episode_no=2","exposureDateMillis":1404216000000,"displayUp":false,"hasBgm":false},
+ {"episodeNo":81,"episodeTitle":"[Season 2] Ep. 1","viewerLink":"https://m.webtoons.com/en/fantasy/tower-of-god/season-2-ep-1/viewer?title_no=95&episode_no=81","exposureDateMillis":1430000000000,"displayUp":false,"hasBgm":false}
+],"nextCursor":82}}
