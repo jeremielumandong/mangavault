@@ -7,12 +7,17 @@ cd "$(dirname "$0")/.."
 
 [[ -f "$HOME/.cargo/env" ]] && source "$HOME/.cargo/env"
 if [[ -n "${WORKERS_CI:-}${CI:-}" ]]; then
-  if ! command -v cargo >/dev/null; then
+  # A system cargo without rustup can't add the wasm target, so check rustup.
+  if ! command -v rustup >/dev/null; then
+    echo "build.sh: installing the Rust toolchain"
     curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
     source "$HOME/.cargo/env"
   fi
   rustup target add wasm32-unknown-unknown
-  command -v worker-build >/dev/null || cargo install worker-build@0.8.7 --locked
+  if ! command -v worker-build >/dev/null; then
+    echo "build.sh: installing worker-build"
+    cargo install worker-build@0.8.7 --locked
+  fi
 fi
 
 cd crates/worker && worker-build --release
