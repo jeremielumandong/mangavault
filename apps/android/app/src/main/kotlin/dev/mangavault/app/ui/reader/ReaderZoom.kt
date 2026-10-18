@@ -167,10 +167,11 @@ class ZoomState {
         val pw = (panel.width * c.width).coerceAtLeast(1f)
         val ph = (panel.height * c.height).coerceAtLeast(1f)
         val s = (min(viewport.width / pw, viewport.height / ph) * (1f - margin)).coerceIn(1f, MAX_SCALE)
-        val cx = ((panel.left + panel.right) / 2f - 0.5f) * c.width
-        val cy = ((panel.top + panel.bottom) / 2f - 0.5f) * c.height
+        // How far the panel's centre must move to reach the viewport centre, unscaled.
+        val dx = (0.5f - (panel.left + panel.right) / 2f) * c.width
+        val dy = (0.5f - (panel.top + panel.bottom) / 2f) * c.height
         val l = limits(s)
-        return s to Offset((-cx * s).coerceIn(-l.x, l.x), (-cy * s).coerceIn(-l.y, l.y))
+        return s to Offset((dx * s).coerceIn(-l.x, l.x), (dy * s).coerceIn(-l.y, l.y))
     }
 
     /** Glides to [panel], for guided view. */
