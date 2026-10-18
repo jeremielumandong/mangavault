@@ -1,0 +1,11 @@
+// Build settings shared by every configuration. Real values (the API domain,
+// the Google client id, your signing team) go in Config.local.xcconfig, which
+// is gitignored and written by scripts/configure.sh. Never put them here.
+
+API_DOMAIN = api.example.com
+GOOGLE_IOS_CLIENT_ID =
+GOOGLE_IOS_REVERSED_CLIENT_ID = mangavault-google-unset
+MV_BUNDLE_ID = dev.mangavault.app
+DEVELOPMENT_TEAM =
+
+#include? "Config.local.xcconfig"

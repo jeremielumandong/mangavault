@@ -1,0 +1,100 @@
+name: iOS
+
+on:
+  pull_request:
+    paths:
+      - "apps/ios/**"
+      - ".github/workflows/ios.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/ios/**"
+      - ".github/workflows/ios.yml"
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: macos-15
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: apps/ios
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select the latest Xcode
+        run: |
+          latest=$(ls -d /Applications/Xcode_*.app 2>/dev/null | grep -v -i beta | sort -V | tail -1)
+          if [ -n "$latest" ]; then sudo xcode-select -s "$latest/Contents/Developer"; fi
+          xcodebuild -version
+
+      - name: Package tests (MangavaultKit)
+        run: swift test --package-path Packages/MangavaultKit
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Write local config
+        env:
+          # Repository secret; without it the build uses the placeholder.
+          API_DOMAIN: ${{ secrets.API_DOMAIN }}
+          GOOGLE_IOS_CLIENT_ID: ${{ secrets.GOOGLE_IOS_CLIENT_ID }}
+        run: bash scripts/configure.sh
+
+      - name: Generate the Xcode project
+        run: xcodegen generate
+
+      - name: Pick an iPhone simulator
+        id: sim
+        run: |
+          id=$(xcrun simctl list devices available -j | python3 -c '
+          import json, re, sys
+          data = json.load(sys.stdin)["devices"]
+          best = None
+          for runtime, devices in data.items():
+              m = re.search(r"iOS-(\d+)-(\d+)", runtime)
+              if not m:
+                  continue
+              version = (int(m.group(1)), int(m.group(2)))
+              if version < (17, 0):
+                  continue
+              for d in devices:
+                  if d.get("isAvailable") and d["name"].startswith("iPhone"):
+                      key = (version, "Pro" in d["name"], d["name"])
+                      if best is None or key > best[0]:
+                          best = (key, d["udid"])
+          print(best[1] if best else "")
+          ')
+          if [ -z "$id" ]; then
+            echo "No iOS 17+ iPhone simulator found" >&2
+            xcrun simctl list devices available
+            exit 1
+          fi
+          echo "Using simulator $id"
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+
+      - name: Build and test
+        run: |
+          mkdir -p build
+          status=0
+          xcodebuild test \
+            -project Mangavault.xcodeproj \
+            -scheme Mangavault \
+            -destination "id=${{ steps.sim.outputs.id }}" \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            > build/xcodebuild.log 2>&1 || status=$?
+          grep -E "error:|Test Case .* failed|Executed [0-9]+ test|\*\* (BUILD|TEST) " build/xcodebuild.log || true
+          if [ "$status" -ne 0 ]; then tail -n 80 build/xcodebuild.log; fi
+          exit "$status"
+
+      - name: Upload log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-log
+          path: apps/ios/build/xcodebuild.log
+          if-no-files-found: ignore
