@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Two stacked pages with an accent spine, inside the 72dp adaptive-icon safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FF2A2A32"
+        android:pathData="M42,32h26a4,4 0,0 1,4 4v38a4,4 0,0 1,-4 4h-26a4,4 0,0 1,-4 -4v-38a4,4 0,0 1,4 -4z" />
+    <path
+        android:fillColor="#FFF2F2F5"
+        android:pathData="M36,36h26a4,4 0,0 1,4 4v34a4,4 0,0 1,-4 4h-26a4,4 0,0 1,-4 -4v-34a4,4 0,0 1,4 -4z" />
+    <path
+        android:fillColor="#FFFF5A5F"
+        android:pathData="M32,40a4,4 0,0 1,4 -4h4v42h-4a4,4 0,0 1,-4 -4z" />
+    <path
+        android:fillColor="#FFFF5A5F"
+        android:pathData="M46,46h14v4h-14zM46,54h10v4h-10z" />
+</vector>
