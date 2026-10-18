@@ -1,6 +1,8 @@
 //! comichubfree.com, a western comics aggregator (Marvel, DC, Image, Dark
 //! Horse and more), the less crowded mirror of XOXO Comics. No bot check and
-//! no cookies; images load from the site itself.
+//! no cookies. Its image host swaps in a branded placeholder when the
+//! request has no `Referer` from the site (see
+//! [`SourceId::image_headers`](crate::SourceId::image_headers)).
 //!
 //! Manga id: the series slug (`invincible`). Chapter id: the issue path
 //! without its leading slash (`invincible/issue-120`).
@@ -119,13 +121,21 @@ fn valid_slug(s: &str) -> bool {
         && s != ".."
 }
 
-/// Lazy-loaded images keep the real URL in `data-src`.
+/// Lazy-loaded images keep the real URL in a `data-*` attribute and a
+/// loading placeholder in `src`, so `src` comes last and placeholders are
+/// skipped.
 fn image_of(img: ElementRef<'_>) -> Option<String> {
-    let raw = ["data-src", "src"]
-        .iter()
-        .filter_map(|k| img.value().attr(k))
-        .map(str::trim)
-        .find(|u| !u.is_empty() && !u.starts_with("data:"))?;
+    let raw = [
+        "data-src",
+        "data-original",
+        "data-lazy-src",
+        "data-url",
+        "src",
+    ]
+    .iter()
+    .filter_map(|k| img.value().attr(k))
+    .map(str::trim)
+    .find(|u| !u.is_empty() && !u.starts_with("data:") && !is_placeholder(u))?;
     if raw.starts_with("http") {
         Some(raw.to_string())
     } else if let Some(rest) = raw.strip_prefix("//") {
@@ -135,6 +145,20 @@ fn image_of(img: ElementRef<'_>) -> Option<String> {
     } else {
         None
     }
+}
+
+fn is_placeholder(url: &str) -> bool {
+    let file = url
+        .split(['?', '#'])
+        .next()
+        .unwrap_or(url)
+        .rsplit('/')
+        .next()
+        .unwrap_or_default()
+        .to_lowercase();
+    ["loading", "placeholder", "lazy", "blank", "default"]
+        .iter()
+        .any(|w| file.contains(w))
 }
 
 pub async fn series<H: Http>(http: &H, slug: &str) -> Result<SeriesData> {
@@ -169,7 +193,7 @@ fn parse_details(doc: &Html, slug: &str, url: String) -> Result<MangaDetails> {
         .select(&sel("h1, h2"))
         .next()
         .or_else(|| doc.select(&sel("h1")).next())
-        .map(text_of)
+        .map(|h| clean_title(&text_of(h)))
         .filter(|t| !t.is_empty())
         .ok_or_else(|| Error::Parse(format!("ComicHubFree page without title: {url}")))?;
     // `<dt>Label:</dt><dd>value</dd>` pairs.
@@ -275,6 +299,19 @@ fn parse_chapters(doc: &Html, series_title: &str) -> Vec<ChapterEntry> {
         });
     }
     chapters
+}
+
+/// The heading is SEO copy: "Read Invincible (2003) Comics Online for Free".
+fn clean_title(raw: &str) -> String {
+    use std::sync::OnceLock;
+    static RE: OnceLock<regex::Regex> = OnceLock::new();
+    let re = RE.get_or_init(|| {
+        regex::Regex::new(r"(?i)^read\s+(.+?)\s+comics?\s+online(?:\s+for\s+free)?$").unwrap()
+    });
+    let t = raw.trim();
+    re.captures(t)
+        .map(|c| c[1].trim().to_string())
+        .unwrap_or_else(|| t.to_string())
 }
 
 /// `invincible/issue-120` from `https://comichubfree.com/invincible/issue-120`.
@@ -420,6 +457,7 @@ mod tests {
                 "https://2.bp.blogspot.com/inv120/01.jpg",
                 "https://2.bp.blogspot.com/inv120/02.jpg",
                 "https://comichubfree.com/storage/inv120/03.jpg",
+                "https://2.bp.blogspot.com/inv120/04.jpg",
             ]
         );
     }
@@ -450,5 +488,12 @@ mod tests {
             Some("2024-09-01T00:00:00Z")
         );
         assert_eq!(short_date("yesterday"), None);
+        assert_eq!(
+            clean_title("Read Invincible (2003) Comics Online for Free"),
+            "Invincible (2003)"
+        );
+        assert_eq!(clean_title("Read Spawn Comic Online"), "Spawn");
+        assert_eq!(clean_title("Invincible (2003)"), "Invincible (2003)");
+        assert_eq!(clean_title("Read Online"), "Read Online");
     }
 }

@@ -68,10 +68,10 @@ impl SourceId {
             // The image CDN (pstatic.net) rejects requests without it.
             SourceId::Webtoons => &[("Referer", "http://m.webtoons.com/")],
             SourceId::Tapas => &[("Referer", "https://m.tapas.io/")],
-            SourceId::MangaDex
-            | SourceId::AsuraScans
-            | SourceId::MgEko
-            | SourceId::ComicHubFree => &[],
+            // Without it, pages and covers come back as a "COMIC HUB FREE"
+            // placeholder image.
+            SourceId::ComicHubFree => &[("Referer", "https://comichubfree.com/")],
+            SourceId::MangaDex | SourceId::AsuraScans | SourceId::MgEko => &[],
         }
     }
 
