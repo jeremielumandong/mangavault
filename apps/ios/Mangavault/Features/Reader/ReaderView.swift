@@ -86,7 +86,8 @@ struct ReaderView: View {
             } else {
                 PagedReader(
                     model: model, position: model.position, itemCount: model.items.count,
-                    reloadToken: model.reload?.token ?? 0, background: s.readerBackground, fit: s.fit
+                    reloadToken: model.reload?.token ?? 0, background: s.readerBackground, fit: model.fit,
+                    guided: s.guided
                 )
                 .id(model.mode)
             }
@@ -437,7 +438,8 @@ struct ReaderSettingsSheet: View {
                 }
 
                 VStack(spacing: 0) {
-                    toggle("Page gap (webtoon)", s.pageGap, theme, first: true) { store.settings.pageGap.toggle() }
+                    toggle("Guided view (panel by panel)", s.guided, theme, first: true) { store.settings.guided.toggle() }
+                    toggle("Page gap (webtoon)", s.pageGap, theme) { store.settings.pageGap.toggle() }
                     toggle("Dim overlay", s.dim, theme) { store.settings.dim.toggle() }
                     toggle("Keep screen on", s.keepScreenOn, theme) { store.settings.keepScreenOn.toggle() }
                     toggle("Show page number", s.showPageNumber, theme) { store.settings.showPageNumber.toggle() }

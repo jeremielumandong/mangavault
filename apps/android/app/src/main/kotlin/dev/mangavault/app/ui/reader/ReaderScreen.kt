@@ -12,6 +12,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -191,7 +192,7 @@ fun ReaderScreen(nav: Navigator, mangaId: Long, chapterId: Long, page: Int) {
             }
             else -> key(ui.session, mode) {
                 Paged(
-                    ui, palette, mode, rp.fit, rp.invert, retryKeys, startIndex = current,
+                    ui, palette, mode, rp.fit, rp.invert, rp.guided, retryKeys, startIndex = current,
                     onTapCenter = { controls = !controls; if (!controls) more = false },
                     onCurrent = { current = it }, jump = jump, onJumped = { jump = null },
                     onLongPress = { sheet = RSheet.PageMenu(it) },
@@ -523,6 +524,7 @@ private fun Paged(
     mode: String,
     fit: String,
     invert: Boolean,
+    guided: Boolean,
     retryKeys: Map<String, Int>,
     startIndex: Int,
     onTapCenter: () -> Unit,
@@ -539,9 +541,15 @@ private fun Paged(
     // Each page zooms on its own; this is whether the page on screen is zoomed in.
     var zoomed by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    // Guided view: each page's panels, and which way the reader last moved.
+    val guides = remember { mutableMapOf<Int, PanelGuide>() }
+    var forward by remember { mutableStateOf(true) }
 
     LaunchedEffect(pager) {
+        var last = pager.currentPage
         snapshotFlow { pager.currentPage }.distinctUntilChanged().collect {
+            forward = it >= last
+            last = it
             zoomed = false
             onCurrent(it)
         }
@@ -552,9 +560,32 @@ private fun Paged(
         onJumped()
     }
 
+    /** One step forward (+1) or back (-1) in reading order: a panel in guided view, else a page. */
+    fun step(dir: Int) {
+        val page = pager.currentPage
+        val target = (page + dir).coerceIn(0, items.size - 1)
+        scope.launch {
+            if (guided && guides[page]?.step(dir) == true) return@launch
+            if (target != page) pager.animateScrollToPage(target)
+        }
+    }
+
+    /** Guided view turns swipes into steps, since the pager can't scroll while a panel is zoomed. */
+    fun onSwipe(d: Offset) {
+        if (onMore()) return
+        val vertical = mode == ReaderModes.PAGED_VERTICAL
+        val along = if (vertical) d.y else d.x
+        if (abs(along) < abs(if (vertical) d.x else d.y)) return
+        // Dragging the page left (or up) moves forward; right to left reverses it.
+        var dir = if (along < 0) 1 else -1
+        if (mode == ReaderModes.RTL) dir = -dir
+        step(dir)
+    }
+
     fun onTap(at: Offset, size: IntSize) {
         if (onMore()) return
-        if (zoomed || size.width == 0 || size.height == 0) {
+        // Guided view keeps the tap zones while zoomed into a panel.
+        if ((zoomed && !guided) || size.width == 0 || size.height == 0) {
             onTapCenter()
             return
         }
@@ -571,22 +602,25 @@ private fun Paged(
         // In right-to-left, the left edge moves forward.
         var dir = if (mode == ReaderModes.RTL) -zone else zone
         if (invert) dir = -dir
-        val target = (pager.currentPage + dir).coerceIn(0, items.size - 1)
-        if (target != pager.currentPage) scope.launch { pager.animateScrollToPage(target) }
+        step(dir)
     }
 
     val content: @Composable (Int) -> Unit = { i ->
         when (val x = items[i]) {
             is ReaderItem.PageItem -> PagedPage(
-                x.page, x.pageNumber, x.seg.data.imageHeaders, palette, retryKeys[x.key] ?: 0, fit,
+                x.page, x.pageNumber, x.seg.data.imageHeaders, palette, retryKeys[x.key] ?: 0,
+                if (guided) "Screen" else fit,
                 active = i == pager.currentPage, onZoomed = { if (i == pager.currentPage) zoomed = it },
                 onTap = ::onTap, onLongPress = { onLongPress(x) },
+                guided = guided, rtl = mode == ReaderModes.RTL, arrivedForward = { forward },
+                onGuide = { g -> if (g != null) guides[i] = g else guides.remove(i) },
+                onSwipe = ::onSwipe,
             )
-            is ReaderItem.Transition -> TapSurface(::onTap) {
+            is ReaderItem.Transition -> TapSurface(::onTap, if (guided) ::onSwipe else null) {
                 if (x.next == null && !x.failed) LaunchedEffect(x.nextId) { endActions.onRetryNext() }
                 TransitionPage(x, palette, mode, chapterFor(x.nextId), endActions.onRetryNext)
             }
-            is ReaderItem.End -> TapSurface(::onTap) { CaughtUp(x, palette, endActions, Modifier.fillMaxSize()) }
+            is ReaderItem.End -> TapSurface(::onTap, if (guided) ::onSwipe else null) { CaughtUp(x, palette, endActions, Modifier.fillMaxSize()) }
         }
     }
 
@@ -595,24 +629,38 @@ private fun Paged(
         if (mode == ReaderModes.PAGED_VERTICAL) {
             VerticalPager(
                 state = pager, modifier = Modifier.fillMaxSize(), beyondViewportPageCount = 1,
-                userScrollEnabled = !zoomed, key = { keyOf(items[it]) },
+                userScrollEnabled = !zoomed && !guided, key = { keyOf(items[it]) },
             ) { content(it) }
         } else {
             HorizontalPager(
                 state = pager, modifier = Modifier.fillMaxSize(), beyondViewportPageCount = 1,
-                reverseLayout = mode == ReaderModes.RTL, userScrollEnabled = !zoomed, key = { keyOf(items[it]) },
+                reverseLayout = mode == ReaderModes.RTL, userScrollEnabled = !zoomed && !guided, key = { keyOf(items[it]) },
             ) { content(it) }
         }
     }
 }
 
 @Composable
-private fun TapSurface(onTap: (Offset, IntSize) -> Unit, content: @Composable () -> Unit) {
+private fun TapSurface(onTap: (Offset, IntSize) -> Unit, onSwipe: ((Offset) -> Unit)?, content: @Composable () -> Unit) {
     var size by remember { mutableStateOf(IntSize.Zero) }
     val tap by rememberUpdatedState(onTap)
+    val swipe by rememberUpdatedState(onSwipe)
     Box(
         Modifier.fillMaxSize()
             .onSizeChanged { size = it }
+            .then(
+                if (onSwipe == null) Modifier
+                else Modifier.pointerInput(Unit) {
+                    var total = Offset.Zero
+                    detectDragGestures(
+                        onDragStart = { total = Offset.Zero },
+                        onDragEnd = { swipe?.invoke(total) },
+                    ) { change, d ->
+                        change.consume()
+                        total += d
+                    }
+                },
+            )
             .pointerInput(Unit) { detectTapGestures(onTap = { tap(it, size) }) },
         contentAlignment = Alignment.Center,
     ) { content() }
