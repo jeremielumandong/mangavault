@@ -35,9 +35,30 @@ Run the crawler locally with `npx wrangler dev --local --test-scheduled` and `cu
 
 ## Deploy
 
-1. `npx wrangler login`, then `npx wrangler d1 create mangavault`.
-2. Copy `../config.env.example` to `../config.env` and set `API_DOMAIN` (a hostname on a zone in your Cloudflare account) and `D1_DATABASE_ID`.
-3. Set `APPLE_AUDIENCES` (your iOS bundle id) and `GOOGLE_AUDIENCES` (your Google OAuth client ids) in `wrangler.toml` `[vars]`.
-4. `npm run deploy`. This applies migrations, deploys, and attaches the custom domain.
+One-time setup:
+
+1. `npx wrangler login`, then `npx wrangler d1 create mangavault` and note the database id.
+2. Set `APPLE_AUDIENCES` (your iOS bundle id) and `GOOGLE_AUDIENCES` (your Google OAuth client ids) in `wrangler.toml` `[vars]`.
+
+The deploy needs two values, `API_DOMAIN` (a hostname on a zone in your Cloudflare account) and `D1_DATABASE_ID`. They are never committed: `scripts/deploy.sh` reads them from environment variables, falling back to the repo's gitignored `config.env`. It applies pending migrations, deploys, and attaches the custom domain.
+
+### From your machine
+
+Copy `../config.env.example` to `../config.env`, fill in both values, then `npm ci && npm run deploy` (needs Rust with the `wasm32-unknown-unknown` target and `cargo install worker-build@0.8.7`).
+
+### Cloudflare Workers Builds (deploy on push to main)
+
+In the Worker's Settings > Build:
+
+| Setting | Value |
+| --- | --- |
+| Git branch | `main` |
+| Root directory | `backend` |
+| Build command | empty |
+| Deploy command | `npm run deploy` |
+| Build variables | `API_DOMAIN` and `D1_DATABASE_ID` |
+| Non-production branch builds | off |
+
+The Worker's name in the dashboard must be `mangavault-api`, the `name` in `wrangler.toml`. The deploy script installs Rust and worker-build in the build image, so the first build takes a few minutes.
 
 The default crawl budgets assume the Workers Paid plan. On the Free plan (50 subrequests and 50 D1 queries per invocation), set `CRAWL_REFRESH_BUDGET` to about 2 and `CRAWL_POPULAR_PAGES` to 1.
