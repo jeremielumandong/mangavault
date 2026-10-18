@@ -216,9 +216,9 @@ pub async fn summaries(
     Ok(rows.iter().map(SeriesRow::summary).collect())
 }
 
-/// Series with no title worth showing yet (a list entry that never loaded)
-/// stay out of browse rows.
-const LISTABLE: &str = "s.chapter_count > 0";
+/// Series seen in a site's list but not fetched yet are listed too: opening
+/// one fetches it on demand. Fetched series without chapters stay out.
+const LISTABLE: &str = "(s.chapter_count > 0 OR s.details_fetched_at IS NULL)";
 
 async fn home(app: &App) -> ApiResult {
     let row = |order: &str| {

@@ -46,7 +46,7 @@ impl Config {
             google_audiences: list("GOOGLE_AUDIENCES"),
             dev_auth: var("DEV_AUTH") == "true",
             refresh_budget: var("CRAWL_REFRESH_BUDGET").parse().unwrap_or(15),
-            popular_pages: var("CRAWL_POPULAR_PAGES").parse().unwrap_or(3),
+            popular_pages: var("CRAWL_POPULAR_PAGES").parse().unwrap_or(1),
             admin_token: env
                 .secret("ADMIN_TOKEN")
                 .map(|v| v.to_string())

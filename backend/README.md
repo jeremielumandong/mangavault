@@ -15,7 +15,7 @@ A Rust Cloudflare Worker that crawls MangaDex, MangaPill, AsuraScans and WeebCen
 
 - Every site's copy of a series is an `entry`. Entries whose normalized titles (or alternative titles) match share one `series`, which is what the app shows as a manga.
 - The series' chapter list is the union of every site's chapters by chapter number. Each chapter keeps its sites in preference order (scanlation sites first for manhwa/manhua, MangaDex first for manga), and page loading falls back down that list.
-- Every 15 minutes the cron reads each site's latest-updates page and refreshes the series that changed, most popular first, up to `CRAWL_REFRESH_BUDGET`. Every 6 hours it walks `CRAWL_POPULAR_PAGES` more pages of each site's popular list.
+- Every 15 minutes the cron reads each site's latest-updates page and refreshes the series that changed, most popular first, up to `CRAWL_REFRESH_BUDGET`. Four times an hour, in separate runs, it walks `CRAWL_POPULAR_PAGES` more pages of each site's popular list. Titles show up in browse as soon as a list has them; opening one fetches its chapters.
 - Opening a series whose details are older than 6 hours refreshes it on the spot; searching with few local results also asks the sites live (at most once a day per query).
 
 ## Develop
@@ -65,7 +65,7 @@ The Worker's name in the dashboard must match `name` in `wrangler.toml` (`mangav
 
 - **Is it up?** `curl https://$API_DOMAIN/` returns the API name and version, and `curl https://$API_DOMAIN/v1/home` returns the Home rows. They are empty until the first crawl.
 - **Custom domain.** The deploy attaches `API_DOMAIN` as a Custom Domain, which needs the domain's zone in the same Cloudflare account. Check it under the Worker's Settings > Domains & Routes. `workers_dev` is off, so there is no `*.workers.dev` URL.
-- **First crawl.** The crons run every 15 minutes (latest updates) and every 6 hours (popular). To run one now, add a secret `ADMIN_TOKEN` (Worker > Settings > Variables and Secrets, type Secret; any long random string), then:
+- **First crawl.** The crons run every 15 minutes (latest updates) and four times an hour (popular). To run one now, add a secret `ADMIN_TOKEN` (Worker > Settings > Variables and Secrets, type Secret; any long random string), then:
 
   ```sh
   curl -X POST -H "Authorization: Bearer $ADMIN_TOKEN" "https://$API_DOMAIN/v1/admin/crawl?job=popular"
