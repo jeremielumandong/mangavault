@@ -112,7 +112,7 @@ pub async fn series<H: Http>(http: &H, slug: &str) -> Result<SeriesData> {
         source_id: slug.to_string(),
         title,
         alt_titles,
-        cover_url: thumbnail_cover(s["cover"].as_str(), 800),
+        cover_url: thumbnail_cover(s["cover"].as_str(), 400),
         description,
         authors: list("author"),
         artists: list("artist"),
@@ -189,9 +189,14 @@ pub async fn pages<H: Http>(http: &H, chapter_id: &str) -> Result<Vec<PageImage>
 }
 
 fn parse_list(body: &Value) -> Result<MangaList> {
-    let data = body["data"]
-        .as_array()
-        .ok_or_else(|| Error::Parse("AsuraScans list without data".into()))?;
+    // A search with no results answers `"data": null`.
+    let empty = Vec::new();
+    let data = match &body["data"] {
+        Value::Null if body.get("data").is_some() => &empty,
+        d => d
+            .as_array()
+            .ok_or_else(|| Error::Parse("AsuraScans list without data".into()))?,
+    };
     let items = data
         .iter()
         .filter_map(|m| {
@@ -208,8 +213,9 @@ fn parse_list(body: &Value) -> Result<MangaList> {
     })
 }
 
-/// The API returns multi-MB cover masters; the CDN also serves `-400` and
-/// `-800` widths of every `.webp` cover. Other URLs pass through unchanged.
+/// The API returns multi-MB cover masters; the CDN also serves a `-400`
+/// width of every `.webp` cover (`-800` only when the master is large
+/// enough). Other URLs pass through unchanged.
 fn thumbnail_cover(url: Option<&str>, width: u32) -> Option<String> {
     let url = url.filter(|u| !u.is_empty())?;
     let Some(stem) = url
@@ -237,6 +243,14 @@ mod tests {
     const DETAIL: &str = include_str!("../../tests/fixtures/asura_series.json");
     const CHAPTERS: &str = include_str!("../../tests/fixtures/asura_chapters.json");
     const PAGES: &str = include_str!("../../tests/fixtures/asura_pages.json");
+
+    #[test]
+    fn empty_search_is_not_an_error() {
+        let http = Fixtures::new(&[("/search", r#"{"data":null,"meta":{"per_page":20}}"#)]);
+        let list = block_on(search(&http, "zzz", 1)).unwrap();
+        assert!(list.items.is_empty());
+        assert!(parse_list(&serde_json::json!({"meta": {}})).is_err());
+    }
 
     #[test]
     fn parses_list_with_thumbnail_covers() {
