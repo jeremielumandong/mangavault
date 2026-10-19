@@ -3,6 +3,7 @@
 
 pub mod asurascans;
 pub mod mangadex;
+pub mod mangakatana;
 pub mod mangapill;
 pub mod mgeko;
 pub mod tapas;
@@ -18,16 +19,18 @@ pub enum SourceId {
     MgEko,
     Webtoons,
     Tapas,
+    MangaKatana,
 }
 
 impl SourceId {
-    pub const ALL: [SourceId; 6] = [
+    pub const ALL: [SourceId; 7] = [
         SourceId::MangaDex,
         SourceId::MangaPill,
         SourceId::AsuraScans,
         SourceId::MgEko,
         SourceId::Webtoons,
         SourceId::Tapas,
+        SourceId::MangaKatana,
     ];
 
     pub fn as_str(self) -> &'static str {
@@ -38,6 +41,7 @@ impl SourceId {
             SourceId::MgEko => "mgeko",
             SourceId::Webtoons => "webtoons",
             SourceId::Tapas => "tapas",
+            SourceId::MangaKatana => "mangakatana",
         }
     }
 
@@ -53,6 +57,7 @@ impl SourceId {
             SourceId::MgEko => "MgEko",
             SourceId::Webtoons => "Webtoons",
             SourceId::Tapas => "Tapas",
+            SourceId::MangaKatana => "MangaKatana",
         }
     }
 
@@ -63,7 +68,9 @@ impl SourceId {
             // The image CDN (pstatic.net) rejects requests without it.
             SourceId::Webtoons => &[("Referer", "http://m.webtoons.com/")],
             SourceId::Tapas => &[("Referer", "https://m.tapas.io/")],
-            SourceId::MangaDex | SourceId::AsuraScans | SourceId::MgEko => &[],
+            SourceId::MangaDex | SourceId::AsuraScans | SourceId::MgEko | SourceId::MangaKatana => {
+                &[]
+            }
         }
     }
 
@@ -72,13 +79,27 @@ impl SourceId {
     /// strips); MangaDex first for Japanese manga (official-quality scans).
     /// Webtoons and Tapas come last: they number episodes their own way and
     /// paywall some, so they serve mainly the series only they carry.
-    pub fn preference(kind: Option<Kind>) -> [SourceId; 6] {
+    pub fn preference(kind: Option<Kind>) -> [SourceId; 7] {
         use SourceId::*;
         match kind {
-            Some(Kind::Manhwa) | Some(Kind::Manhua) => {
-                [AsuraScans, MgEko, MangaDex, MangaPill, Webtoons, Tapas]
-            }
-            _ => [MangaDex, MangaPill, MgEko, AsuraScans, Webtoons, Tapas],
+            Some(Kind::Manhwa) | Some(Kind::Manhua) => [
+                AsuraScans,
+                MgEko,
+                MangaDex,
+                MangaPill,
+                MangaKatana,
+                Webtoons,
+                Tapas,
+            ],
+            _ => [
+                MangaDex,
+                MangaPill,
+                MangaKatana,
+                MgEko,
+                AsuraScans,
+                Webtoons,
+                Tapas,
+            ],
         }
     }
 
@@ -90,6 +111,7 @@ impl SourceId {
             SourceId::MgEko => mgeko::popular(http, page).await,
             SourceId::Webtoons => webtoons::popular(http, page).await,
             SourceId::Tapas => tapas::popular(http, page).await,
+            SourceId::MangaKatana => mangakatana::popular(http, page).await,
         }
     }
 
@@ -101,6 +123,7 @@ impl SourceId {
             SourceId::MgEko => mgeko::latest(http, page).await,
             SourceId::Webtoons => webtoons::latest(http, page).await,
             SourceId::Tapas => tapas::latest(http, page).await,
+            SourceId::MangaKatana => mangakatana::latest(http, page).await,
         }
     }
 
@@ -112,6 +135,7 @@ impl SourceId {
             SourceId::MgEko => mgeko::search(http, query, page).await,
             SourceId::Webtoons => webtoons::search(http, query, page).await,
             SourceId::Tapas => tapas::search(http, query, page).await,
+            SourceId::MangaKatana => mangakatana::search(http, query, page).await,
         }
     }
 
@@ -124,6 +148,7 @@ impl SourceId {
             SourceId::MgEko => mgeko::series(http, source_id).await,
             SourceId::Webtoons => webtoons::series(http, source_id).await,
             SourceId::Tapas => tapas::series(http, source_id).await,
+            SourceId::MangaKatana => mangakatana::series(http, source_id).await,
         }
     }
 
@@ -135,6 +160,7 @@ impl SourceId {
             SourceId::MgEko => mgeko::pages(http, chapter_id).await,
             SourceId::Webtoons => webtoons::pages(http, chapter_id).await,
             SourceId::Tapas => tapas::pages(http, chapter_id).await,
+            SourceId::MangaKatana => mangakatana::pages(http, chapter_id).await,
         }
     }
 }
