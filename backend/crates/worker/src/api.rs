@@ -419,13 +419,34 @@ async fn fresh_series(app: &App, id: i64) -> std::result::Result<SeriesRow, ApiE
     let s = catalog::series(&app.db, id)
         .await?
         .ok_or_else(|| ApiError::not_found(format!("manga {id} not found")))?;
-    if !catalog::is_stale(s.details_fetched_at.as_deref()) {
+    let s = if !catalog::is_stale(s.details_fetched_at.as_deref()) {
+        s
+    } else {
+        match catalog::refresh_series(&app.db, &app.http, s.id).await {
+            Ok(_) => catalog::series(&app.db, s.id).await?.unwrap_or(s),
+            Err(e) => {
+                worker::console_warn!("on-demand refresh of {} failed: {e}", s.id);
+                s
+            }
+        }
+    };
+    find_elsewhere(app, s).await
+}
+
+/// A series with nothing readable (typically licensed on MangaDex, where
+/// English chapters are removed or external links) is looked up on the
+/// other sites by title, at most once a day; matches join it.
+async fn find_elsewhere(app: &App, s: SeriesRow) -> std::result::Result<SeriesRow, ApiError> {
+    if s.chapter_count > 0 || !should_live_search(app, &s.title).await? {
+        return Ok(s);
+    }
+    if catalog::live_search(&app.db, &app.http, &s.title).await? == 0 {
         return Ok(s);
     }
     match catalog::refresh_series(&app.db, &app.http, s.id).await {
         Ok(_) => Ok(catalog::series(&app.db, s.id).await?.unwrap_or(s)),
         Err(e) => {
-            worker::console_warn!("on-demand refresh of {} failed: {e}", s.id);
+            worker::console_warn!("refresh of {} after live search failed: {e}", s.id);
             Ok(s)
         }
     }

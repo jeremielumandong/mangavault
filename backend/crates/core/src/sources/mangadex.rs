@@ -201,9 +201,12 @@ fn parse_feed(feed: &Value) -> Vec<ChapterEntry> {
         .into_iter()
         .flatten()
         .filter(|c| {
-            // Official-publisher links have no readable pages on MangaDex.
+            // Official-publisher links and removed chapters have no readable
+            // pages on MangaDex.
             let a = &c["attributes"];
-            a["externalUrl"].is_null() && a["pages"].as_u64().unwrap_or(1) > 0
+            a["externalUrl"].is_null()
+                && a["pages"].as_u64().unwrap_or(1) > 0
+                && a["isUnavailable"] != true
         })
         .filter_map(|c| {
             let a = &c["attributes"];

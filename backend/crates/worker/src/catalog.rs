@@ -733,7 +733,7 @@ pub async fn chapter_pages<H: Http>(
         ch.pages_source.as_deref().and_then(SourceId::parse),
     ) {
         if let Ok(pages) = serde_json::from_str::<Vec<Page>>(pages) {
-            if !pages.is_empty() {
+            if !pages.is_empty() && !links_expired(&pages) {
                 return Ok(ChapterPages { pages, source });
             }
         }
@@ -766,6 +766,24 @@ pub async fn chapter_pages<H: Http>(
     } else {
         errors.join("; ")
     })
+}
+
+/// Signed page links (Tapas' `__token__=exp=<unix>~acl=...`) stop working
+/// at `exp`, well before the page cache would; refetch a few minutes early.
+fn links_expired(pages: &[Page]) -> bool {
+    pages
+        .first()
+        .and_then(|p| link_expiry(&p.url))
+        .is_some_and(|exp| exp - 300 < time::now().timestamp())
+}
+
+fn link_expiry(url: &str) -> Option<i64> {
+    let at = url
+        .match_indices("exp=")
+        .find(|(i, _)| matches!(url[..*i].chars().last(), Some('?' | '&' | '=' | '~')))?
+        .0;
+    let digits: String = url[at + 4..].chars().take_while(char::is_ascii_digit).collect();
+    digits.parse().ok()
 }
 
 fn to_pages(images: Vec<PageImage>) -> Vec<Page> {
@@ -813,4 +831,23 @@ pub async fn live_search<H: Http>(db: &Db, http: &H, query: &str) -> Result<usiz
         }
     }
     Ok(stored)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn reads_signed_link_expiry() {
+        let tapas = "https://us-a.tapas.io/pc/ee/371b.jpg?__token__=exp=1792353832~acl=/pc/*~hmac=ab12";
+        assert_eq!(link_expiry(tapas), Some(1792353832));
+        assert_eq!(link_expiry("https://x.test/a.jpg?exp=17&b=1"), Some(17));
+        assert_eq!(link_expiry("https://x.test/exp=1/a.jpg"), None);
+        assert_eq!(link_expiry("https://uploads.mangadex.org/data/h/1.png"), None);
+        let page = |url: &str| Page { index: 0, url: url.into(), width: None, height: None };
+        assert!(links_expired(&[page(tapas)]));
+        let later = time::now().timestamp() + 86_400;
+        assert!(!links_expired(&[page(&format!("https://us-a.tapas.io/a.jpg?__token__=exp={later}~acl=x"))]));
+        assert!(!links_expired(&[page("https://uploads.mangadex.org/data/h/1.png")]));
+    }
 }
