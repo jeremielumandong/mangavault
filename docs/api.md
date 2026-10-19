@@ -15,7 +15,7 @@ Authenticated endpoints take `Authorization: Bearer <token>`. Everything under "
 
 ## One merged catalog
 
-The app shows one catalog, not one per site. The backend crawls MangaDex, MangaPill, AsuraScans, MgEko, Webtoons and Tapas, and merges the same series from different sites into a single **manga** entry (matched on normalized titles and alternative titles). Its chapter list is merged too: one row per chapter number, served by the best available site, with the other sites kept as fallbacks. Clients never need to know which site a chapter comes from; they just send the `imageHeaders` that come with each chapter's pages.
+The app shows one catalog, not one per site. The backend crawls MangaDex, MangaPill, MangaKatana, AsuraScans, MgEko, Webtoons and Tapas, and merges the same series from different sites into a single **manga** entry (matched on normalized titles and alternative titles). Its chapter list is merged too: one row per chapter number, served by the best available site, with the other sites kept as fallbacks. Clients never need to know which site a chapter comes from; they just send the `imageHeaders` that come with each chapter's pages.
 
 ## Models
 
